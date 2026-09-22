@@ -35,22 +35,37 @@ jobs:
       matrix:
         include:
           - arch: linux-amd64
-            runner: ubuntu-latest
           - arch: linux-arm64
-            runner: ubuntu-latest-arm64-small
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     env:
       MVN: ./mvnw --show-version --batch-mode --no-transfer-progress
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v5
-      - uses: graalvm/setup-graalvm@v1
+
+      - if: matrix.arch == 'linux-amd64'
+        uses: graalvm/setup-graalvm@v1
         with:
           java-version: 25
           distribution: graalvm
           cache: maven
-      - run: $MVN -DskipTests package -Pnative
+      - if: matrix.arch == 'linux-amd64'
+        run: $MVN -DskipTests package -Pnative
+
+      - if: matrix.arch == 'linux-arm64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - if: matrix.arch == 'linux-arm64'
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v "${{ github.workspace }}":/work \
+            -v "$HOME/.m2":/root/.m2 \
+            -w /work \
+            ghcr.io/graalvm/native-image-community:25 \
+            bash -c "$MVN -DskipTests package -Pnative"
+
       - uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
