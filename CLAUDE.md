@@ -16,6 +16,8 @@ The API is designed to be embedded in the existing MGT Neo4j container image (wh
 ./mvnw package                                               # Package (JVM)
 ./mvnw package -Pnative                                      # Package (native image)
 ./mvnw verify                                                # Build + tests
+./mvnw verify -Pintegration-test                             # Build + tests + integration tests
+./mvnw verify -Pintegration-test -Dmgt.image=quay.io/modelgraphtools/model:42.0.0  # Override MGT image
 ```
 
 ## Development Setup

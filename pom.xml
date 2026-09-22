@@ -46,16 +46,23 @@
     </scm>
 
     <properties>
-        <maven.compiler.release>25</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- Dependency versions -->
+        <neo4j-quarkus.version>6.7.2</neo4j-quarkus.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.39.3</quarkus.platform.version>
+        <testcontainers.version>1.21.1</testcontainers.version>
+
+        <!-- Plugin versions -->
         <compiler-plugin.version>3.15.0</compiler-plugin.version>
-        <neo4j-quarkus.version>6.7.2</neo4j-quarkus.version>
-        <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
+
+        <!-- Build related -->
+        <maven.compiler.release>25</maven.compiler.release>
+        <mgt.image>quay.io/modelgraphtools/model:41.0.1</mgt.image>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <skipITs>true</skipITs>
     </properties>
 
     <dependencyManagement>
@@ -107,6 +114,12 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -142,6 +155,9 @@
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
+                    <excludes>
+                        <exclude>**/*IT.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -160,13 +176,23 @@
                         <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
+                        <mgt.image>${mgt.image}</mgt.image>
                     </systemPropertyVariables>
+                    <environmentVariables>
+                        <TESTCONTAINERS_RYUK_DISABLED>true</TESTCONTAINERS_RYUK_DISABLED>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>
     </build>
 
     <profiles>
+        <profile>
+            <id>integration-test</id>
+            <properties>
+                <skipITs>false</skipITs>
+            </properties>
+        </profile>
         <profile>
             <id>native</id>
             <activation>
