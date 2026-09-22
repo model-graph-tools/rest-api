@@ -18,11 +18,11 @@ The MGT ecosystem indexes the WildFly management model into a Neo4j graph databa
 ┌────────────────────────────────────────────────────────────┐
 │                  MGT Container                             │
 │                                                            │
-│  ┌──────────┐     ┌──────────────┐     ┌───────────────┐  │
-│  │  nginx   │────►│  REST API    │────►│    Neo4j      │  │
-│  │  :7474   │     │  (Quarkus)   │     │  (Bolt :7687) │  │
-│  │          │     │  :8080       │     │               │  │
-│  └──────────┘     └──────────────┘     └───────────────┘  │
+│  ┌──────────┐     ┌──────────────┐     ┌───────────────┐   │
+│  │  nginx   │────►│  REST API    │────►│    Neo4j      │   │
+│  │  :7474   │     │  (Quarkus)   │     │  (Bolt :7687) │   │
+│  │          │     │  :8080       │     │               │   │
+│  └──────────┘     └──────────────┘     └───────────────┘   │
 │       │                                                    │
 │       ├── /api/*  → REST API                               │
 │       └── /*      → Neo4j Browser                          │
@@ -42,8 +42,11 @@ Requires Java 25.
 # Package (JVM)
 ./mvnw package
 
-# Package (native image)
+# Package (native image, requires GraalVM)
 ./mvnw package -Pnative
+
+# Build + tests
+./mvnw verify
 ```
 
 ## Development
@@ -61,6 +64,22 @@ Then start the REST API in dev mode, pointing at the container's Bolt port:
 ```
 
 The API is available at http://localhost:8080. Health checks are at http://localhost:8080/q/health. The OpenAPI spec is at http://localhost:8080/q/openapi.
+
+## Release
+
+Releases are created with the `release.sh` script:
+
+```bash
+./release.sh 0.1.0
+```
+
+This bumps the POM version, commits, tags, and pushes to origin. The tag triggers the [release workflow](.github/workflows/release.yml), which builds native binaries for both `linux/amd64` and `linux/arm64` using GraalVM and uploads them as GitHub release assets.
+
+## Container Integration
+
+The REST API is not shipped as a standalone container. Instead, the native binaries from each release are downloaded by the [tooling](https://github.com/model-graph-tools/tooling) repo during the MGT container image build. The MGT container is a multi-arch image (`linux/amd64`, `linux/arm64`), and the correct binary is selected based on `TARGETARCH`.
+
+Inside the container, nginx proxies `/api/*` to the Quarkus process on port 8080. No new ports are exposed — the API is reachable through the existing MGT HTTP port (e.g., `http://localhost:7410/api/search?q=pool`).
 
 ## Related Projects
 
