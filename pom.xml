@@ -50,7 +50,7 @@
         <neo4j-quarkus.version>6.7.2</neo4j-quarkus.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.39.3</quarkus.platform.version>
+        <quarkus.platform.version>3.39.4</quarkus.platform.version>
         <testcontainers.version>2.0.5</testcontainers.version>
 
         <!-- Plugin versions -->
