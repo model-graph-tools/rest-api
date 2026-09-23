@@ -62,7 +62,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v5
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
         with:
           platforms: arm64
       - uses: graalvm/setup-graalvm@v1
