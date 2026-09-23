@@ -18,7 +18,7 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       version: ${{ steps.get-version.outputs.version-without-v }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - id: get-version
         uses: battila7/get-version-action@v2.3.0
       - id: create_release
@@ -38,7 +38,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: graalvm/setup-graalvm@v1
         with:
           java-version: 25
@@ -61,7 +61,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: docker/setup-qemu-action@v4
         with:
           platforms: arm64
