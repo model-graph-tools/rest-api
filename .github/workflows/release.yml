@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+env:
+  MVN: ./mvnw --show-version --batch-mode --no-transfer-progress
+
 jobs:
   create-release:
     name: Create GitHub release
@@ -28,19 +31,10 @@ jobs:
           draft: false
           prerelease: false
 
-  upload-assets:
-    name: Build and upload ${{ matrix.arch }}
+  upload-amd64:
+    name: Build and upload linux-amd64
     needs: create-release
-    strategy:
-      matrix:
-        include:
-          - arch: linux-amd64
-            runner: ubuntu-latest
-          - arch: linux-arm64
-            runner: ubuntu-latest-arm64-small
-    runs-on: ${{ matrix.runner }}
-    env:
-      MVN: ./mvnw --show-version --batch-mode --no-transfer-progress
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
@@ -57,5 +51,34 @@ jobs:
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: target/model-graph-rest-api-${{ needs.create-release.outputs.version }}-runner
-          asset_name: ${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-${{ matrix.arch }}
+          asset_name: ${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-amd64
+          asset_content_type: application/octet-stream
+
+  upload-arm64:
+    name: Build and upload linux-arm64
+    needs: create-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: 25
+          distribution: graalvm
+          cache: maven
+      - run: |
+          $MVN -DskipTests package -Pnative \
+            -Dquarkus.native.container-build=true \
+            -Dquarkus.native.container-runtime-options=--platform=linux/arm64
+      - uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: target/model-graph-rest-api-${{ needs.create-release.outputs.version }}-runner
+          asset_name: ${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-arm64
           asset_content_type: application/octet-stream
