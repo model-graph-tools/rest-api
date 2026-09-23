@@ -14,7 +14,6 @@ import org.neo4j.driver.Record;
 public class ModelGraphRepository {
 
     static final String SEARCH_INDEX = "mgt_search";
-    static final String CAPABILITY_SEARCH_INDEX = "mgt_capability_search";
 
     private static final String SEARCH_QUERY = """
             CALL {
@@ -63,7 +62,7 @@ public class ModelGraphRepository {
                 LIMIT $limit
             }
             RETURN type, name, description, address, score
-            """.formatted(SEARCH_INDEX, SEARCH_INDEX, CAPABILITY_SEARCH_INDEX, SEARCH_INDEX);
+            """.formatted(SEARCH_INDEX, SEARCH_INDEX, SEARCH_INDEX, SEARCH_INDEX);
 
     private static final String CAPABILITY_REFERENCES_QUERY = """
             MATCH (c:Capability {name: $name})<-[:REFERENCES_CAPABILITY]-(a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource)

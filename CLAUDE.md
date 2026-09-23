@@ -50,7 +50,7 @@ The MGT Neo4j database contains these node types and relationships:
 
 **Key relationships:** `Resource -[HAS_ATTRIBUTE]-> Attribute`, `Resource -[DECLARES_CAPABILITY]-> Capability`, `Resource -[CHILD_OF]-> Resource`, `Resource -[PROVIDES]-> Operation`, `Attribute -[REFERENCES_CAPABILITY]-> Capability`, `Attribute -[REQUIRES]-> Attribute`, `Attribute -[ALTERNATIVE]-> Attribute`
 
-**Indexes:** RANGE indexes on `name` for Resource, Attribute, Capability, Operation, Parameter. A full-text index (`mgt_search`) across Resource/Attribute/Capability name+description is planned ([analyzer#1](https://github.com/model-graph-tools/analyzer/issues/1)).
+**Indexes:** RANGE indexes on `name` for Resource, Attribute, Capability, Operation, Parameter. A full-text index (`mgt_search`) across Resource/Attribute/Capability/Operation on `name` only.
 
 ### How halOP Uses This API
 
