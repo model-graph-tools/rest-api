@@ -52,10 +52,9 @@ public class ModelGraphRepository {
             UNION ALL
             CALL {
                 CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
-                WHERE node:Operation
+                WHERE node:Operation AND NOT node.global
                 MATCH (node)<-[:PROVIDES]-(r:Resource)
                 WHERE NOT r.address STARTS WITH '/deployment'
-                  AND r.address <> '/'
                 RETURN 'Operation' AS type, node.name AS name, node.description AS description,
                        r.address AS address, score
                 ORDER BY score DESC, node.name
