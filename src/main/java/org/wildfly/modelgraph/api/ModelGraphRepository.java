@@ -56,9 +56,12 @@ public class ModelGraphRepository {
             ORDER BY r.address
             """;
 
-    private static final String VERSION_QUERY = """
+    private static final String IDENTITY_QUERY = """
             MATCH (i:Identity)
-            RETURN i.version AS version, i.type AS sourceType
+            RETURN i.identifier AS identifier, i.`group-id` AS groupId, i.`artifact-id` AS artifactId,
+                   i.name AS name, i.version AS version, i.type AS type,
+                   i.description AS description, i.url AS url, i.`scm-url` AS scmUrl,
+                   i.licenses AS licenses
             LIMIT 1
             """;
 
@@ -79,16 +82,24 @@ public class ModelGraphRepository {
         }
     }
 
-    public VersionResponse version() {
+    public IdentityResponse identity() {
         try (var session = driver.session()) {
-            var result = session.run(VERSION_QUERY);
+            var result = session.run(IDENTITY_QUERY);
             if (result.hasNext()) {
                 var record = result.next();
-                return new VersionResponse(
+                return new IdentityResponse(
+                        record.get("identifier").asString(null),
+                        record.get("groupId").asString(null),
+                        record.get("artifactId").asString(null),
+                        record.get("name").asString(null),
                         record.get("version").asString(null),
-                        mapSourceType(record.get("sourceType").asString(null)));
+                        record.get("type").asString(null),
+                        record.get("description").asString(null),
+                        record.get("url").asString(null),
+                        record.get("scmUrl").asString(null),
+                        record.get("licenses").asString(null));
             }
-            return new VersionResponse(null, null);
+            return new IdentityResponse(null, null, null, null, null, null, null, null, null, null);
         }
     }
 
@@ -108,14 +119,4 @@ public class ModelGraphRepository {
                 record.get("resourceAddress").asString(null));
     }
 
-    private static String mapSourceType(String type) {
-        if (type == null) {
-            return null;
-        }
-        return switch (type) {
-            case "wf" -> "wildfly";
-            case "eap" -> "eap";
-            default -> type;
-        };
-    }
 }

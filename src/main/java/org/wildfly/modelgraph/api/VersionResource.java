@@ -1,20 +1,36 @@
 package org.wildfly.modelgraph.api;
 
-import jakarta.inject.Inject;
+import java.util.Optional;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
 @Path("/api/version")
 @Produces(MediaType.APPLICATION_JSON)
 public class VersionResource {
 
-    @Inject
-    ModelGraphRepository repository;
+    @ConfigProperty(name = "quarkus.application.version")
+    String version;
+
+    @ConfigProperty(name = "rest-api.build-time")
+    Optional<String> buildTime;
+
+    @ConfigProperty(name = "rest-api.commit")
+    Optional<String> commit;
+
+    @ConfigProperty(name = "rest-api.tag")
+    Optional<String> tag;
 
     @GET
     public VersionResponse version() {
-        return repository.version();
+        return new VersionResponse(
+                version,
+                buildTime.orElse(null),
+                commit.orElse(null),
+                tag.orElse(null));
     }
 }

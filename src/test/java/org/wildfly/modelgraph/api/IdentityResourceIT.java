@@ -5,20 +5,22 @@ import io.quarkus.test.junit.TestProfile;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.matchesRegex;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 @QuarkusTest
 @TestProfile(IntegrationTestProfile.class)
-class VersionResourceIT {
+class IdentityResourceIT {
 
     @Test
-    void versionReturnsApiVersion() {
+    void identityReturnsGraphIdentity() {
         given()
-                .when().get("/api/version")
+                .when().get("/api/identity")
                 .then()
                 .statusCode(200)
+                .body("identifier", notNullValue())
+                .body("name", notNullValue())
                 .body("version", notNullValue())
-                .body("version", matchesRegex("\\d+\\.\\d+(\\.\\d+)?.*"));
+                .body("version", matchesRegex("\\d+\\.\\d+(\\.\\d+)?.*"))
+                .body("type", is("wf"));
     }
 }
