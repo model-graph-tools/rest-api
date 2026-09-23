@@ -61,7 +61,7 @@ class SearchResourceIT {
                 .statusCode(200)
                 .extract().jsonPath();
 
-        var types = List.of("Resource", "Attribute", "Capability");
+        var types = List.of("Resource", "Attribute", "Capability", "Operation");
         for (String type : types) {
             List<String> matched = results.getList(
                     "results.findAll { it.type == '" + type + "' }.name");
@@ -119,7 +119,7 @@ class SearchResourceIT {
                 .then()
                 .statusCode(200)
                 .body("results", not(empty()))
-                .body("results.type", everyItem(isOneOf("Resource", "Attribute", "Capability")))
+                .body("results.type", everyItem(isOneOf("Resource", "Attribute", "Capability", "Operation")))
                 .body("results.name", everyItem(notNullValue()));
     }
 }

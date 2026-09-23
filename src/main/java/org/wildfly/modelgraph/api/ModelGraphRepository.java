@@ -13,41 +13,57 @@ import org.neo4j.driver.Record;
 @ApplicationScoped
 public class ModelGraphRepository {
 
+    static final String SEARCH_INDEX = "mgt_search";
+    static final String CAPABILITY_SEARCH_INDEX = "mgt_capability_search";
+
     private static final String SEARCH_QUERY = """
             CALL {
-                MATCH (r:Resource)
-                WHERE (r.name CONTAINS $term OR r.description CONTAINS $term)
-                  AND NOT r.address STARTS WITH '/deployment'
-                RETURN 'Resource' AS type, r.name AS name, r.description AS description,
-                       r.address AS address, null AS attributeName
-                ORDER BY CASE WHEN r.name CONTAINS $term THEN 0 ELSE 1 END, r.name
+                CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
+                WHERE node:Resource
+                  AND NOT node.address STARTS WITH '/deployment'
+                RETURN 'Resource' AS type, node.name AS name, node.description AS description,
+                       node.address AS address, score
+                ORDER BY score DESC, node.name
                 LIMIT $limit
             }
-            RETURN type, name, description, address, attributeName
+            RETURN type, name, description, address, score
             UNION ALL
             CALL {
-                MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource)
-                WHERE (a.name CONTAINS $term OR a.description CONTAINS $term)
-                  AND NOT r.address STARTS WITH '/deployment'
-                RETURN 'Attribute' AS type, a.name AS name, a.description AS description,
-                       r.address AS address, a.name AS attributeName
-                ORDER BY CASE WHEN a.name CONTAINS $term THEN 0 ELSE 1 END, a.name
-                LIMIT $limit
-            }
-            RETURN type, name, description, address, attributeName
-            UNION ALL
-            CALL {
-                MATCH (c:Capability)
-                WHERE c.name CONTAINS $term
-                OPTIONAL MATCH (c)<-[:DECLARES_CAPABILITY]-(r:Resource)
+                CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
+                WHERE node:Attribute
+                MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource)
                 WHERE NOT r.address STARTS WITH '/deployment'
-                RETURN 'Capability' AS type, c.name AS name, null AS description,
-                       r.address AS address, null AS attributeName
-                ORDER BY c.name
+                RETURN 'Attribute' AS type, node.name AS name, node.description AS description,
+                       r.address AS address, score
+                ORDER BY score DESC, node.name
                 LIMIT $limit
             }
-            RETURN type, name, description, address, attributeName
-            """;
+            RETURN type, name, description, address, score
+            UNION ALL
+            CALL {
+                CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
+                OPTIONAL MATCH (node)<-[:DECLARES_CAPABILITY]-(r:Resource)
+                WHERE NOT r.address STARTS WITH '/deployment'
+                RETURN 'Capability' AS type, node.name AS name, null AS description,
+                       r.address AS address, score
+                ORDER BY score DESC, node.name
+                LIMIT $limit
+            }
+            RETURN type, name, description, address, score
+            UNION ALL
+            CALL {
+                CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
+                WHERE node:Operation
+                MATCH (node)<-[:PROVIDES]-(r:Resource)
+                WHERE NOT r.address STARTS WITH '/deployment'
+                  AND r.address <> '/'
+                RETURN 'Operation' AS type, node.name AS name, node.description AS description,
+                       r.address AS address, score
+                ORDER BY score DESC, node.name
+                LIMIT $limit
+            }
+            RETURN type, name, description, address, score
+            """.formatted(SEARCH_INDEX, SEARCH_INDEX, CAPABILITY_SEARCH_INDEX, SEARCH_INDEX);
 
     private static final String CAPABILITY_REFERENCES_QUERY = """
             MATCH (c:Capability {name: $name})<-[:REFERENCES_CAPABILITY]-(a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource)
@@ -70,9 +86,15 @@ public class ModelGraphRepository {
 
     public List<SearchResult> search(String term, int limit) {
         try (var session = driver.session()) {
-            return session.run(SEARCH_QUERY, Map.of("term", term, "limit", limit))
+            String luceneTerm = escapeAndWildcard(term);
+            return session.run(SEARCH_QUERY, Map.of("term", luceneTerm, "limit", limit))
                     .list(ModelGraphRepository::toSearchResult);
         }
+    }
+
+    static String escapeAndWildcard(String term) {
+        String escaped = term.replaceAll("([+\\-&|!(){}\\[\\]^\"~*?:\\\\])", "\\\\$1");
+        return escaped + "*";
     }
 
     public List<CapabilityReference> capabilityReferences(String name) {
@@ -108,8 +130,7 @@ public class ModelGraphRepository {
                 record.get("type").asString(),
                 record.get("name").asString(null),
                 record.get("description").asString(null),
-                record.get("address").asString(null),
-                record.get("attributeName").asString(null));
+                record.get("address").asString(null));
     }
 
     private static CapabilityReference toCapabilityReference(Record record) {

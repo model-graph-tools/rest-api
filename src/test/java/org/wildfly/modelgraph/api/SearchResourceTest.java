@@ -20,9 +20,9 @@ class SearchResourceTest {
     void searchReturnsResults() {
         Mockito.when(repository.search("pool", 10)).thenReturn(List.of(
                 new SearchResult("Resource", "buffer-pool", "Defines buffer pool",
-                        "/subsystem=io/buffer-pool=*", null),
+                        "/subsystem=io/buffer-pool=*"),
                 new SearchResult("Attribute", "buffer-pool", "The listeners buffer pool",
-                        "/subsystem=undertow/server=*/http-listener=*", "buffer-pool")));
+                        "/subsystem=undertow/server=*/http-listener=*")));
 
         given()
                 .queryParam("q", "pool")
@@ -33,16 +33,15 @@ class SearchResourceTest {
                 .body("results[0].type", is("Resource"))
                 .body("results[0].name", is("buffer-pool"))
                 .body("results[0].address", is("/subsystem=io/buffer-pool=*"))
-                .body("results[0].attributeName", nullValue())
                 .body("results[1].type", is("Attribute"))
-                .body("results[1].attributeName", is("buffer-pool"));
+                .body("results[1].name", is("buffer-pool"));
     }
 
     @Test
     void searchWithCustomLimit() {
         Mockito.when(repository.search("pool", 5)).thenReturn(List.of(
                 new SearchResult("Resource", "buffer-pool", "Defines buffer pool",
-                        "/subsystem=io/buffer-pool=*", null)));
+                        "/subsystem=io/buffer-pool=*")));
 
         given()
                 .queryParam("q", "pool")
