@@ -29,8 +29,12 @@ public class VersionResource {
     public VersionResponse version() {
         return new VersionResponse(
                 version,
-                buildTime.orElse(null),
-                commit.orElse(null),
-                tag.orElse(null));
+                emptyToNull(buildTime),
+                emptyToNull(commit),
+                emptyToNull(tag));
+    }
+
+    private String emptyToNull(Optional<String> value) {
+        return value.filter(s -> !s.isBlank()).orElse(null);
     }
 }

@@ -39,7 +39,11 @@ jobs:
           java-version: 25
           distribution: graalvm
           cache: maven
-      - run: $MVN -DskipTests package -Pnative
+      - run: >
+          $MVN -DskipTests package -Pnative
+          -Drest-api.tag=${{ github.ref_name }}
+          -Drest-api.commit=${{ github.sha }}
+          -Drest-api.build-time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
       - run: >
           cp
           target/model-graph-rest-api-${{ needs.create-release.outputs.version }}-runner
@@ -67,7 +71,10 @@ jobs:
       - run: |
           $MVN -DskipTests package -Pnative \
             -Dquarkus.native.container-build=true \
-            -Dquarkus.native.container-runtime-options=--platform=linux/arm64
+            -Dquarkus.native.container-runtime-options=--platform=linux/arm64 \
+            -Drest-api.tag=${{ github.ref_name }} \
+            -Drest-api.commit=${{ github.sha }} \
+            -Drest-api.build-time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
       - run: >
           cp
           target/model-graph-rest-api-${{ needs.create-release.outputs.version }}-runner
