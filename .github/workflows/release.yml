@@ -15,19 +15,14 @@ jobs:
     permissions:
       contents: write
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      version: ${{ steps.get-version.outputs.version-without-v }}
+      version: ${{ steps.get-version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
       - id: get-version
-        uses: battila7/get-version-action@v2.3.0
-      - id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.get-version.outputs.version }}
-          release_name: REST API ${{ steps.get-version.outputs.version-without-v }}
+          name: REST API ${{ steps.get-version.outputs.version }}
           draft: false
           prerelease: false
 
@@ -45,14 +40,13 @@ jobs:
           distribution: graalvm
           cache: maven
       - run: $MVN -DskipTests package -Pnative
-      - uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: >
+          cp
+          target/model-graph-rest-api-${{ needs.create-release.outputs.version }}-runner
+          target/${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-amd64
+      - uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: target/model-graph-rest-api-${{ needs.create-release.outputs.version }}-runner
-          asset_name: ${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-amd64
-          asset_content_type: application/octet-stream
+          files: target/${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-amd64
 
   upload-arm64:
     name: Build and upload linux-arm64
@@ -74,11 +68,10 @@ jobs:
           $MVN -DskipTests package -Pnative \
             -Dquarkus.native.container-build=true \
             -Dquarkus.native.container-runtime-options=--platform=linux/arm64
-      - uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: >
+          cp
+          target/model-graph-rest-api-${{ needs.create-release.outputs.version }}-runner
+          target/${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-arm64
+      - uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: target/model-graph-rest-api-${{ needs.create-release.outputs.version }}-runner
-          asset_name: ${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-arm64
-          asset_content_type: application/octet-stream
+          files: target/${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-arm64
