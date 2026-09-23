@@ -14,30 +14,39 @@ import org.neo4j.driver.Record;
 public class ModelGraphRepository {
 
     private static final String SEARCH_QUERY = """
-            MATCH (r:Resource)
-            WHERE (r.name CONTAINS $term OR r.description CONTAINS $term)
-              AND NOT r.address STARTS WITH '/deployment'
-            RETURN 'Resource' AS type, r.name AS name, r.description AS description,
-                   r.address AS address, null AS attributeName
-            ORDER BY CASE WHEN r.name CONTAINS $term THEN 0 ELSE 1 END, r.name
-            LIMIT $limit
+            CALL {
+                MATCH (r:Resource)
+                WHERE (r.name CONTAINS $term OR r.description CONTAINS $term)
+                  AND NOT r.address STARTS WITH '/deployment'
+                RETURN 'Resource' AS type, r.name AS name, r.description AS description,
+                       r.address AS address, null AS attributeName
+                ORDER BY CASE WHEN r.name CONTAINS $term THEN 0 ELSE 1 END, r.name
+                LIMIT $limit
+            }
+            RETURN type, name, description, address, attributeName
             UNION ALL
-            MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource)
-            WHERE (a.name CONTAINS $term OR a.description CONTAINS $term)
-              AND NOT r.address STARTS WITH '/deployment'
-            RETURN 'Attribute' AS type, a.name AS name, a.description AS description,
-                   r.address AS address, a.name AS attributeName
-            ORDER BY CASE WHEN a.name CONTAINS $term THEN 0 ELSE 1 END, a.name
-            LIMIT $limit
+            CALL {
+                MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource)
+                WHERE (a.name CONTAINS $term OR a.description CONTAINS $term)
+                  AND NOT r.address STARTS WITH '/deployment'
+                RETURN 'Attribute' AS type, a.name AS name, a.description AS description,
+                       r.address AS address, a.name AS attributeName
+                ORDER BY CASE WHEN a.name CONTAINS $term THEN 0 ELSE 1 END, a.name
+                LIMIT $limit
+            }
+            RETURN type, name, description, address, attributeName
             UNION ALL
-            MATCH (c:Capability)
-            WHERE c.name CONTAINS $term
-            OPTIONAL MATCH (c)<-[:DECLARES_CAPABILITY]-(r:Resource)
-            WHERE NOT r.address STARTS WITH '/deployment'
-            RETURN 'Capability' AS type, c.name AS name, null AS description,
-                   r.address AS address, null AS attributeName
-            ORDER BY c.name
-            LIMIT $limit
+            CALL {
+                MATCH (c:Capability)
+                WHERE c.name CONTAINS $term
+                OPTIONAL MATCH (c)<-[:DECLARES_CAPABILITY]-(r:Resource)
+                WHERE NOT r.address STARTS WITH '/deployment'
+                RETURN 'Capability' AS type, c.name AS name, null AS description,
+                       r.address AS address, null AS attributeName
+                ORDER BY c.name
+                LIMIT $limit
+            }
+            RETURN type, name, description, address, attributeName
             """;
 
     private static final String CAPABILITY_REFERENCES_QUERY = """
