@@ -55,6 +55,7 @@
 
         <!-- Plugin versions -->
         <compiler-plugin.version>3.16.0</compiler-plugin.version>
+        <keepachangelog-plugin.version>2.1.1</keepachangelog-plugin.version>
         <surefire-plugin.version>3.6.0</surefire-plugin.version>
 
         <!-- Build related -->
@@ -150,6 +151,11 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>co.enear.maven.plugins</groupId>
+                <artifactId>keepachangelog-maven-plugin</artifactId>
+                <version>${keepachangelog-plugin.version}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>

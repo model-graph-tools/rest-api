@@ -124,8 +124,9 @@ msg ""
 msg "If you decide to continue, this script will "
 msg ""
 msg "   1. Bump the version to ${CYAN}${RELEASE_VERSION}${NOFORMAT}"
-msg "   2. Create a tag for ${CYAN}${TAG}${NOFORMAT}"
-msg "   3. ${CYAN}Commit${NOFORMAT} and ${CYAN}push${NOFORMAT} to origin (which will trigger the ${CYAN}release workflow${NOFORMAT} at GitHub)"
+msg "   2. Update the ${CYAN}changelog${NOFORMAT}"
+msg "   3. Create a tag for ${CYAN}${TAG}${NOFORMAT}"
+msg "   4. ${CYAN}Commit${NOFORMAT} and ${CYAN}push${NOFORMAT} to origin (which will trigger the ${CYAN}release workflow${NOFORMAT} at GitHub)"
 msg ""
 echo "Do you wish to continue?"
 select yn in "Yes" "No"; do
@@ -138,6 +139,8 @@ done
 msg ""
 msg "Update version to ${CYAN}${RELEASE_VERSION}${NOFORMAT}"
 ./mvnw --quiet versions:set -DnewVersion="${RELEASE_VERSION}" &> /dev/null
+msg "Update changelog"
+./mvnw --quiet keepachangelog:release -N &> /dev/null
 msg "Push changes"
 git commit --quiet -am "Release ${RELEASE_VERSION}"
 git push --quiet origin main &> /dev/null
