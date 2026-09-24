@@ -1,6 +1,5 @@
 package org.wildfly.modelgraph.api;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +8,7 @@ import jakarta.inject.Inject;
 
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
+import org.neo4j.driver.Value;
 
 @ApplicationScoped
 public class ModelGraphRepository {
@@ -21,11 +21,11 @@ public class ModelGraphRepository {
                 WHERE node:Resource
                   AND NOT node.address STARTS WITH '/deployment'
                 RETURN 'Resource' AS type, node.name AS name, node.description AS description,
-                       node.address AS address, score
+                       node.address AS address, null AS providedBy, score
                 ORDER BY score DESC, node.name
                 LIMIT $limit
             }
-            RETURN type, name, description, address, score
+            RETURN type, name, description, address, providedBy, score
             UNION ALL
             CALL {
                 CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
@@ -33,22 +33,25 @@ public class ModelGraphRepository {
                 MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource)
                 WHERE NOT r.address STARTS WITH '/deployment'
                 RETURN 'Attribute' AS type, node.name AS name, node.description AS description,
-                       r.address AS address, score
+                       r.address AS address, null AS providedBy, score
                 ORDER BY score DESC, node.name
                 LIMIT $limit
             }
-            RETURN type, name, description, address, score
+            RETURN type, name, description, address, providedBy, score
             UNION ALL
             CALL {
                 CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
+                WHERE node:Capability
                 OPTIONAL MATCH (node)<-[:DECLARES_CAPABILITY]-(r:Resource)
                 WHERE NOT r.address STARTS WITH '/deployment'
+                WITH node, score,
+                     COLLECT(CASE WHEN r IS NOT NULL THEN {name: r.name, address: r.address} END) AS providedBy
                 RETURN 'Capability' AS type, node.name AS name, null AS description,
-                       r.address AS address, score
+                       null AS address, providedBy, score
                 ORDER BY score DESC, node.name
                 LIMIT $limit
             }
-            RETURN type, name, description, address, score
+            RETURN type, name, description, address, providedBy, score
             UNION ALL
             CALL {
                 CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
@@ -56,11 +59,11 @@ public class ModelGraphRepository {
                 MATCH (node)<-[:PROVIDES]-(r:Resource)
                 WHERE NOT r.address STARTS WITH '/deployment'
                 RETURN 'Operation' AS type, node.name AS name, node.description AS description,
-                       r.address AS address, score
+                       r.address AS address, null AS providedBy, score
                 ORDER BY score DESC, node.name
                 LIMIT $limit
             }
-            RETURN type, name, description, address, score
+            RETURN type, name, description, address, providedBy, score
             """.formatted(SEARCH_INDEX, SEARCH_INDEX, SEARCH_INDEX, SEARCH_INDEX);
 
     private static final String CAPABILITY_REFERENCES_QUERY = """
@@ -124,9 +127,16 @@ public class ModelGraphRepository {
     }
 
     private static SearchResult toSearchResult(Record record) {
+        Value providedByValue = record.get("providedBy");
+        List<ResourceRef> providedBy = null;
+        if (!providedByValue.isNull() && !providedByValue.isEmpty()) {
+            providedBy = providedByValue.asList(v ->
+                    new ResourceRef(v.get("name").asString(null), v.get("address").asString(null)));
+        }
         return new SearchResult(
                 record.get("type").asString(),
                 record.get("name").asString(null),
+                providedBy,
                 record.get("description").asString(null),
                 record.get("address").asString(null));
     }
