@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-09-24
+
 ### Added
 - Automate changelog updates in release script using `keepachangelog-maven-plugin`
 - Populate GitHub release notes from changelog via `changelog-reader-action`
@@ -70,7 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release script and CI workflows (verify + release)
 - Multi-arch native image builds (amd64 + arm64)
 
-[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.2.5...HEAD
+[0.2.5]: https://github.com/model-graph-tools/rest-api/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/model-graph-tools/rest-api/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/model-graph-tools/rest-api/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/model-graph-tools/rest-api/compare/v0.2.1...v0.2.2
@@ -79,4 +82,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.1.3]: https://github.com/model-graph-tools/rest-api/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/model-graph-tools/rest-api/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/model-graph-tools/rest-api/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/model-graph-tools/rest-api/releases/tag/v0.1.0
