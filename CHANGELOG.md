@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-10-08
+
 ### Added
 - Add unit tests for `escapeAndWildcard()` covering edge cases (leading/trailing delimiters, consecutive delimiters, mixed delimiters, Lucene operators)
 - Add integration tests for hyphenated resources, attributes, operations, dotted capabilities, and partial terms
@@ -88,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release script and CI workflows (verify + release)
 - Multi-arch native image builds (amd64 + arm64)
 
-[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.2.5...HEAD
+[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.2.6...HEAD
+[0.2.6]: https://github.com/model-graph-tools/rest-api/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/model-graph-tools/rest-api/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/model-graph-tools/rest-api/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/model-graph-tools/rest-api/compare/v0.2.2...v0.2.3
