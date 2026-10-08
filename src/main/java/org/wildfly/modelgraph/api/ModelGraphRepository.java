@@ -86,16 +86,49 @@ public class ModelGraphRepository {
     Driver driver;
 
     public List<SearchResult> search(String term, int limit) {
+        String luceneTerm = escapeAndWildcard(term);
+        if (luceneTerm.isEmpty()) {
+            return List.of();
+        }
         try (var session = driver.session()) {
-            String luceneTerm = escapeAndWildcard(term);
             return session.run(SEARCH_QUERY, Map.of("term", luceneTerm, "limit", limit))
                     .list(ModelGraphRepository::toSearchResult);
         }
     }
 
     static String escapeAndWildcard(String term) {
-        String escaped = term.replaceAll("([+\\-&|!(){}\\[\\]^\"~*?:\\\\])", "\\\\$1");
-        return escaped + "*";
+        String stripped = term.replaceAll("^[\\s\\-._]+|[\\s\\-._]+$", "");
+        if (stripped.isEmpty()) {
+            return "";
+        }
+        String[] parts = stripped.split("[\\s\\-._]+");
+        if (parts.length <= 1) {
+            String escaped = escapeLucene(stripped);
+            return escaped + "*";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            if (parts[i].isEmpty()) {
+                continue;
+            }
+            if (!sb.isEmpty()) {
+                sb.append(" AND ");
+            }
+            String escaped = escapeLucene(parts[i]);
+            if (i == parts.length - 1) {
+                sb.append(escaped).append("*");
+            } else {
+                sb.append(escaped);
+            }
+        }
+        return sb.toString();
+    }
+
+    private static String escapeLucene(String s) {
+        String escaped = s.replaceAll("([+&|!(){}\\[\\]^\"~*?:\\\\])", "\\\\$1");
+        return java.util.regex.Pattern.compile("\\b(AND|OR|NOT)\\b")
+                .matcher(escaped)
+                .replaceAll(m -> m.group().toLowerCase());
     }
 
     public List<CapabilityReference> capabilityReferences(String name) {

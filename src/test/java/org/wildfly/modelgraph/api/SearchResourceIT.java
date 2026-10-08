@@ -102,6 +102,61 @@ class SearchResourceIT {
     }
 
     @Test
+    void searchForHyphenatedResource() {
+        given()
+                .queryParam("q", "http-listener")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .body("results.find { it.type == 'Resource' }.name", containsString("http-listener"));
+    }
+
+    @Test
+    void searchForHyphenatedAttribute() {
+        given()
+                .queryParam("q", "max-pool-size")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .body("results.findAll { it.type == 'Attribute' }.name", hasItem(containsString("max-pool-size")));
+    }
+
+    @Test
+    void searchForHyphenatedOperation() {
+        given()
+                .queryParam("q", "read-resource")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .body("results.findAll { it.type == 'Operation' }.name", hasItem(containsString("read-resource")));
+    }
+
+    @Test
+    void searchForDottedCapability() {
+        given()
+                .queryParam("q", "org.wildfly.io.buffer-pool")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .body("results.find { it.type == 'Capability' }.name", is("org.wildfly.io.buffer-pool"));
+    }
+
+    @Test
+    void searchForPartialHyphenatedTerm() {
+        given()
+                .queryParam("q", "buffer-p")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .body("results.name", hasItem(containsString("buffer-pool")));
+    }
+
+    @Test
     void searchForNonexistentTermReturnsEmpty() {
         given()
                 .queryParam("q", "zzz-nonexistent-zzz")
