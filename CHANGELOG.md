@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-10-08
+
 ### Fixed
 - Fix native image crash with Neo4j 2026.09 by downgrading Neo4j Java driver to 6.2.1 (driver 6.3.0 introduced Property Encryption SPI that fails in GraalVM native image)
 
@@ -93,7 +95,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release script and CI workflows (verify + release)
 - Multi-arch native image builds (amd64 + arm64)
 
-[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.2.6...HEAD
+[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.2.7...HEAD
+[0.2.7]: https://github.com/model-graph-tools/rest-api/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/model-graph-tools/rest-api/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/model-graph-tools/rest-api/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/model-graph-tools/rest-api/compare/v0.2.3...v0.2.4
