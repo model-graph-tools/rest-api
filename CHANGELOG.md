@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add unit tests for `escapeAndWildcard()` covering edge cases (leading/trailing delimiters, consecutive delimiters, mixed delimiters, Lucene operators)
+- Add integration tests for hyphenated resources, attributes, operations, dotted capabilities, and partial terms
+
+### Changed
+- Bump Quarkus to 3.40.1
+- Bump Quarkus Neo4j extension to 6.8.0
+- Bump jboss-parent to 54
+- Bump Maven wrapper to 3.10.0
+- Bump softprops/action-gh-release to v3
+
+### Fixed
+- Fix search for hyphenated, dotted, and special-character terms by splitting on delimiters and joining with Lucene AND operators
+- Preserve dots in search terms to match Neo4j's standard analyzer tokenization (e.g., `org.wildfly.io.buffer-pool` now returns correct results)
+- Escape Lucene special characters and neutralize boolean operators (AND/OR/NOT) appearing as literal parts of names
+
 ## [0.2.5] - 2026-09-24
 
 ### Added
