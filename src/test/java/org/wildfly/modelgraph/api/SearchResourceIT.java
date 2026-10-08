@@ -126,12 +126,12 @@ class SearchResourceIT {
     @Test
     void searchForHyphenatedOperation() {
         given()
-                .queryParam("q", "read-resource")
+                .queryParam("q", "add-alias")
                 .when().get("/api/search")
                 .then()
                 .statusCode(200)
                 .body("results", not(empty()))
-                .body("results.findAll { it.type == 'Operation' }.name", hasItem(containsString("read-resource")));
+                .body("results.findAll { it.type == 'Operation' }.name", hasItem(containsString("add-alias")));
     }
 
     @Test

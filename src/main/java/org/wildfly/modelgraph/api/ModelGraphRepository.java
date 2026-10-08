@@ -97,11 +97,14 @@ public class ModelGraphRepository {
     }
 
     static String escapeAndWildcard(String term) {
+        // Strip leading/trailing delimiters (including dots — a leading dot is noise).
+        // But do NOT split on dots — Neo4j's standard analyzer keeps them as part of tokens
+        // (e.g., "org.wildfly.io.buffer" is one token). Only split on hyphens, underscores, and spaces.
         String stripped = term.replaceAll("^[\\s\\-._]+|[\\s\\-._]+$", "");
         if (stripped.isEmpty()) {
             return "";
         }
-        String[] parts = stripped.split("[\\s\\-._]+");
+        String[] parts = stripped.split("[\\s\\-_]+");
         if (parts.length <= 1) {
             String escaped = escapeLucene(stripped);
             return escaped + "*";

@@ -23,18 +23,18 @@ class ModelGraphRepositoryTest {
             "read-resource, read AND resource*",
             "list-log-files, list AND log AND files*",
 
-            // dotted — split and AND
-            "org.wildfly, org AND wildfly*",
-            "org.wildfly.batch, org AND wildfly AND batch*",
+            // dotted — dots are NOT delimiters (standard analyzer keeps them as part of tokens)
+            "org.wildfly, org.wildfly*",
+            "org.wildfly.batch, org.wildfly.batch*",
 
-            // mixed dots and hyphens
-            "org.wildfly.data-source, org AND wildfly AND data AND source*",
-            "org.wildfly.io.buffer-pool, org AND wildfly AND io AND buffer AND pool*",
+            // mixed dots and hyphens — only split on hyphens
+            "org.wildfly.data-source, org.wildfly.data AND source*",
+            "org.wildfly.io.buffer-pool, org.wildfly.io.buffer AND pool*",
 
             // partial segments (user still typing)
             "default-h, default AND h*",
             "buffer-p, buffer AND p*",
-            "org.wild, org AND wild*",
+            "org.wild, org.wild*",
     })
     void escapeAndWildcard(String input, String expected) {
         assertEquals(expected, ModelGraphRepository.escapeAndWildcard(input));
@@ -78,12 +78,12 @@ class ModelGraphRepositoryTest {
     @Test
     void escapeAndWildcardHandlesConsecutiveDelimiters() {
         assertEquals("buffer AND pool*", ModelGraphRepository.escapeAndWildcard("buffer--pool"));
-        assertEquals("org AND wildfly*", ModelGraphRepository.escapeAndWildcard("org..wildfly"));
+        assertEquals("org..wildfly*", ModelGraphRepository.escapeAndWildcard("org..wildfly"));
     }
 
     @Test
     void escapeAndWildcardHandlesMixedDelimiters() {
-        assertEquals("org AND wildfly AND data AND source*",
+        assertEquals("org.wildfly AND data AND source*",
                 ModelGraphRepository.escapeAndWildcard("org.wildfly-data_source"));
     }
 
