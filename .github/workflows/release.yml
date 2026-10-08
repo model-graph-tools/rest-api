@@ -25,7 +25,7 @@ jobs:
         with:
           path: ./CHANGELOG.md
           version: ${{ steps.get-version.outputs.version }}
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           name: REST API ${{ steps.get-version.outputs.version }}
           body: ${{ steps.read-changelog.outputs.changes }}
@@ -54,7 +54,7 @@ jobs:
           cp
           target/model-graph-rest-api-${{ needs.create-release.outputs.version }}-runner
           target/${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-amd64
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: target/${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-amd64
 
@@ -85,6 +85,6 @@ jobs:
           cp
           target/model-graph-rest-api-${{ needs.create-release.outputs.version }}-runner
           target/${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-arm64
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: target/${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-arm64
