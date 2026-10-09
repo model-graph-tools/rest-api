@@ -63,6 +63,7 @@ Search results should exclude deployment-scoped resources (`NOT r.address STARTS
 Releases are created via `release.sh`, which bumps the POM version, commits, tags, and pushes. The tag triggers the GitHub release workflow (`.github/workflows/release.yml`), which builds multi-arch native binaries:
 
 - **Build matrix:** `ubuntu-latest` (amd64) + `ubuntu-latest-arm64-small` (arm64), both using GraalVM
+- **Distribution:** Not published to any Maven repository — distributed solely as native binaries via GitHub releases
 - **Release assets:** `rest-api-<version>-linux-amd64` and `rest-api-<version>-linux-arm64`
 - **Verify workflow:** `.github/workflows/verify.yml` runs `mvn verify` on pushes to main and PRs
 

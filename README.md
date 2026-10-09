@@ -77,7 +77,7 @@ This bumps the POM version, commits, tags, and pushes to origin. The tag trigger
 
 ## Container Integration
 
-The REST API is not shipped as a standalone container. Instead, the native binaries from each release are downloaded by the [tooling](https://github.com/model-graph-tools/tooling) repo during the MGT container image build. The MGT container is a multi-arch image (`linux/amd64`, `linux/arm64`), and the correct binary is selected based on `TARGETARCH`.
+The REST API is not published to any Maven repository — it is distributed solely as native binaries via GitHub releases. The native binaries from each release are downloaded by the [tooling](https://github.com/model-graph-tools/tooling) repo during the MGT container image build. It is not shipped as a standalone container. The MGT container is a multi-arch image (`linux/amd64`, `linux/arm64`), and the correct binary is selected based on `TARGETARCH`.
 
 Inside the container, nginx proxies `/api/*` to the Quarkus process on port 8080. No new ports are exposed — the API is reachable through the existing MGT HTTP port (e.g., `http://localhost:7410/api/search?q=pool`).
 
