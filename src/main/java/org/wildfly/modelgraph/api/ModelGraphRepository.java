@@ -6,9 +6,11 @@ import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import org.jboss.logging.Logger;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Value;
+import org.neo4j.driver.exceptions.ClientException;
 
 @ApplicationScoped
 public class ModelGraphRepository {
@@ -82,6 +84,8 @@ public class ModelGraphRepository {
             LIMIT 1
             """;
 
+    private static final Logger LOG = Logger.getLogger(ModelGraphRepository.class);
+
     @Inject
     Driver driver;
 
@@ -93,6 +97,9 @@ public class ModelGraphRepository {
         try (var session = driver.session()) {
             return session.run(SEARCH_QUERY, Map.of("term", luceneTerm, "limit", limit))
                     .list(ModelGraphRepository::toSearchResult);
+        } catch (ClientException e) {
+            LOG.warnf("Invalid search query '%s' (escaped: '%s'): %s", term, luceneTerm, e.getMessage());
+            return List.of();
         }
     }
 
@@ -128,7 +135,7 @@ public class ModelGraphRepository {
     }
 
     private static String escapeLucene(String s) {
-        String escaped = s.replaceAll("([+&|!(){}\\[\\]^\"~*?:\\\\])", "\\\\$1");
+        String escaped = s.replaceAll("([+&|!(){}\\[\\]^\"~*?:\\\\/])", "\\\\$1");
         return java.util.regex.Pattern.compile("\\b(AND|OR|NOT)\\b")
                 .matcher(escaped)
                 .replaceAll(m -> m.group().toLowerCase());

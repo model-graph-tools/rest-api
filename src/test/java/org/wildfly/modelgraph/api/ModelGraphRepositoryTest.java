@@ -44,6 +44,8 @@ class ModelGraphRepositoryTest {
     void escapeAndWildcardEscapesLuceneSpecialChars() {
         assertEquals("pool\\!test*", ModelGraphRepository.escapeAndWildcard("pool!test"));
         assertEquals("query\\(1\\)*", ModelGraphRepository.escapeAndWildcard("query(1)"));
+        assertEquals("path\\/to*", ModelGraphRepository.escapeAndWildcard("path/to"));
+        assertEquals("a\\/b\\/c*", ModelGraphRepository.escapeAndWildcard("a/b/c"));
     }
 
     @Test

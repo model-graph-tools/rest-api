@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Escape forward slashes in search queries to prevent Lucene parse errors
+- Return empty results instead of 500 error for malformed search queries
+
 ## [0.2.7] - 2026-10-08
 
 ### Fixed
