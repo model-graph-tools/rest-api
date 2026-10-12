@@ -146,6 +146,91 @@ class SearchResourceIT {
     }
 
     @Test
+    void searchForCapabilityBySegment() {
+        given()
+                .queryParam("q", "batch")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results.findAll { it.type == 'Capability' }", not(empty()));
+    }
+
+    @Test
+    void searchForCapabilityByHyphenatedSegment() {
+        given()
+                .queryParam("q", "data-source")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results.findAll { it.type == 'Capability' }.name",
+                        hasItem(containsString("data-source")));
+    }
+
+    @Test
+    void searchForCapabilityByDehyphenatedTerm() {
+        given()
+                .queryParam("q", "datasource")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results.findAll { it.type == 'Capability' }.name",
+                        hasItem(containsString("data-source")));
+    }
+
+    @Test
+    void searchForCapabilityByElytronSegment() {
+        given()
+                .queryParam("q", "elytron")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results.findAll { it.type == 'Capability' }", not(empty()))
+                .body("results.findAll { it.type == 'Capability' }.name",
+                        everyItem(containsString("elytron")));
+    }
+
+    @Test
+    void searchForCapabilityBySegmentIncludesProvidedBy() {
+        var results = given()
+                .queryParam("q", "batch")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<Map<String, Object>> capabilities = results.getList(
+                "results.findAll { it.type == 'Capability' }");
+        assertThat("Expected capability results for 'batch'", capabilities, not(empty()));
+        boolean anyHasProvidedBy = capabilities.stream()
+                .anyMatch(c -> c.get("providedBy") != null);
+        assertThat("At least one capability should have providedBy resources", anyHasProvidedBy, is(true));
+    }
+
+    @Test
+    void searchForCapabilityExcludesDeploymentResourcesInProvidedBy() {
+        var results = given()
+                .queryParam("q", "batch")
+                .queryParam("limit", 100)
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<Map<String, Object>> capabilities = results.getList(
+                "results.findAll { it.type == 'Capability' }");
+        for (Map<String, Object> cap : capabilities) {
+            List<Map<String, String>> providedBy = (List<Map<String, String>>) cap.get("providedBy");
+            if (providedBy != null) {
+                for (Map<String, String> ref : providedBy) {
+                    String address = ref.get("address");
+                    assertThat("Capability '" + cap.get("name") + "' providedBy should not include deployments",
+                            address, not(startsWith("/deployment")));
+                }
+            }
+        }
+    }
+
+    @Test
     void searchForPartialHyphenatedTerm() {
         given()
                 .queryParam("q", "buffer-p")

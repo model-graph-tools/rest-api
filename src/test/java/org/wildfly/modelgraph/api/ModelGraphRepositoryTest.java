@@ -1,5 +1,7 @@
 package org.wildfly.modelgraph.api;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -94,5 +96,42 @@ class ModelGraphRepositoryTest {
         assertEquals("", ModelGraphRepository.escapeAndWildcard("---"));
         assertEquals("", ModelGraphRepository.escapeAndWildcard("..."));
         assertEquals("", ModelGraphRepository.escapeAndWildcard(" "));
+    }
+
+    @Test
+    void capabilityTermsSplitsOnAllDelimiters() {
+        assertEquals(List.of("org", "wildfly", "data", "source"),
+                ModelGraphRepository.capabilityTerms("org.wildfly.data-source"));
+    }
+
+    @Test
+    void capabilityTermsSingleWord() {
+        assertEquals(List.of("batch"), ModelGraphRepository.capabilityTerms("batch"));
+    }
+
+    @Test
+    void capabilityTermsLowercases() {
+        assertEquals(List.of("buffer", "pool"), ModelGraphRepository.capabilityTerms("Buffer-Pool"));
+    }
+
+    @Test
+    void capabilityTermsSplitsOnSpaces() {
+        assertEquals(List.of("buffer", "pool"), ModelGraphRepository.capabilityTerms("buffer pool"));
+    }
+
+    @Test
+    void capabilityTermsSplitsOnDots() {
+        assertEquals(List.of("org", "wildfly", "batch", "configuration"),
+                ModelGraphRepository.capabilityTerms("org.wildfly.batch.configuration"));
+    }
+
+    @Test
+    void capabilityTermsSplitsOnUnderscores() {
+        assertEquals(List.of("some", "term"), ModelGraphRepository.capabilityTerms("some_term"));
+    }
+
+    @Test
+    void capabilityTermsFiltersEmptyParts() {
+        assertEquals(List.of("batch"), ModelGraphRepository.capabilityTerms("..batch.."));
     }
 }

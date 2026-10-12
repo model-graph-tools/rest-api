@@ -1,5 +1,6 @@
 package org.wildfly.modelgraph.api;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -42,15 +43,16 @@ public class ModelGraphRepository {
             RETURN type, name, description, address, providedBy, score
             UNION ALL
             CALL {
-                CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
-                WHERE node:Capability
+                MATCH (node:Capability)
+                WHERE ALL(part IN $capabilityTerms WHERE
+                    toLower(replace(node.name, '-', '')) CONTAINS part)
                 OPTIONAL MATCH (node)<-[:DECLARES_CAPABILITY]-(r:Resource)
                 WHERE NOT r.address STARTS WITH '/deployment'
-                WITH node, score,
+                WITH node,
                      COLLECT(CASE WHEN r IS NOT NULL THEN {name: r.name, address: r.address} END) AS providedBy
                 RETURN 'Capability' AS type, node.name AS name, null AS description,
-                       null AS address, providedBy, score
-                ORDER BY score DESC, node.name
+                       null AS address, providedBy, 1.0 AS score
+                ORDER BY node.name
                 LIMIT $limit
             }
             RETURN type, name, description, address, providedBy, score
@@ -66,7 +68,7 @@ public class ModelGraphRepository {
                 LIMIT $limit
             }
             RETURN type, name, description, address, providedBy, score
-            """.formatted(SEARCH_INDEX, SEARCH_INDEX, SEARCH_INDEX, SEARCH_INDEX);
+            """.formatted(SEARCH_INDEX, SEARCH_INDEX, SEARCH_INDEX);
 
     private static final String CAPABILITY_REFERENCES_QUERY = """
             MATCH (c:Capability {name: $name})<-[:REFERENCES_CAPABILITY]-(a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource)
@@ -94,8 +96,10 @@ public class ModelGraphRepository {
         if (luceneTerm.isEmpty()) {
             return List.of();
         }
+        List<String> capTerms = capabilityTerms(term);
         try (var session = driver.session()) {
-            return session.run(SEARCH_QUERY, Map.of("term", luceneTerm, "limit", limit))
+            return session.run(SEARCH_QUERY,
+                            Map.of("term", luceneTerm, "limit", limit, "capabilityTerms", capTerms))
                     .list(ModelGraphRepository::toSearchResult);
         } catch (ClientException e) {
             LOG.warnf("Invalid search query '%s' (escaped: '%s'): %s", term, luceneTerm, e.getMessage());
@@ -132,6 +136,13 @@ public class ModelGraphRepository {
             }
         }
         return sb.toString();
+    }
+
+    static List<String> capabilityTerms(String term) {
+        return Arrays.stream(term.split("[.\\s\\-_]+"))
+                .map(String::toLowerCase)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 
     private static String escapeLucene(String s) {
