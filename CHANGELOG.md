@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Match capabilities by individual segment instead of full dotted name, so searches like "batch", "datasource", or "elytron" now find capabilities such as `org.wildfly.batch.configuration` or `org.wildfly.data-source`
+
 ## [0.2.8] - 2026-10-09
 
 ### Fixed
