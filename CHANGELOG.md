@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Include stability level in search results and capability references
+- Add `stability` field to `/api/search` response for resources, attributes, operations, and capabilities
+- Add `attributeStability` and `resourceStability` fields to `/api/capability/{name}/references` response
+
 ## [0.2.9] - 2026-10-12
 
 ### Fixed

@@ -9,5 +9,5 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record SearchResult(String type, String name, List<ResourceRef> providedBy, String description,
-        String address) {
+        String address, String stability) {
 }

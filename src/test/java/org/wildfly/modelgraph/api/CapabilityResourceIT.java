@@ -21,7 +21,9 @@ class CapabilityResourceIT {
                 .body("references", not(empty()))
                 .body("references[0].attributeName", notNullValue())
                 .body("references[0].resourceName", notNullValue())
-                .body("references[0].resourceAddress", notNullValue());
+                .body("references[0].attributeStability", notNullValue())
+                .body("references[0].resourceAddress", notNullValue())
+                .body("references[0].resourceStability", notNullValue());
     }
 
     @Test

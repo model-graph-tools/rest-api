@@ -25,7 +25,8 @@ class SearchResourceIT {
                 .statusCode(200)
                 .body("results", not(empty()))
                 .body("results.find { it.type == 'Resource' }.name", is("buffer-pool"))
-                .body("results.find { it.type == 'Resource' }.address", containsString("buffer-pool"));
+                .body("results.find { it.type == 'Resource' }.address", containsString("buffer-pool"))
+                .body("results.find { it.type == 'Resource' }.stability", notNullValue());
     }
 
     @Test
@@ -260,6 +261,7 @@ class SearchResourceIT {
                 .statusCode(200)
                 .body("results", not(empty()))
                 .body("results.type", everyItem(isOneOf("Resource", "Attribute", "Capability", "Operation")))
-                .body("results.name", everyItem(notNullValue()));
+                .body("results.name", everyItem(notNullValue()))
+                .body("results.stability", everyItem(notNullValue()));
     }
 }

@@ -24,11 +24,11 @@ public class ModelGraphRepository {
                 WHERE node:Resource
                   AND NOT node.address STARTS WITH '/deployment'
                 RETURN 'Resource' AS type, node.name AS name, node.description AS description,
-                       node.address AS address, null AS providedBy, score
+                       node.address AS address, null AS providedBy, node.stability AS stability, score
                 ORDER BY score DESC, node.name
                 LIMIT $limit
             }
-            RETURN type, name, description, address, providedBy, score
+            RETURN type, name, description, address, providedBy, stability, score
             UNION ALL
             CALL {
                 CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
@@ -36,11 +36,11 @@ public class ModelGraphRepository {
                 MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource)
                 WHERE NOT r.address STARTS WITH '/deployment'
                 RETURN 'Attribute' AS type, node.name AS name, node.description AS description,
-                       r.address AS address, null AS providedBy, score
+                       r.address AS address, null AS providedBy, node.stability AS stability, score
                 ORDER BY score DESC, node.name
                 LIMIT $limit
             }
-            RETURN type, name, description, address, providedBy, score
+            RETURN type, name, description, address, providedBy, stability, score
             UNION ALL
             CALL {
                 MATCH (node:Capability)
@@ -51,11 +51,11 @@ public class ModelGraphRepository {
                 WITH node,
                      COLLECT(CASE WHEN r IS NOT NULL THEN {name: r.name, address: r.address} END) AS providedBy
                 RETURN 'Capability' AS type, node.name AS name, null AS description,
-                       null AS address, providedBy, 1.0 AS score
+                       null AS address, providedBy, node.stability AS stability, 1.0 AS score
                 ORDER BY node.name
                 LIMIT $limit
             }
-            RETURN type, name, description, address, providedBy, score
+            RETURN type, name, description, address, providedBy, stability, score
             UNION ALL
             CALL {
                 CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
@@ -63,17 +63,18 @@ public class ModelGraphRepository {
                 MATCH (node)<-[:PROVIDES]-(r:Resource)
                 WHERE NOT r.address STARTS WITH '/deployment'
                 RETURN 'Operation' AS type, node.name AS name, node.description AS description,
-                       r.address AS address, null AS providedBy, score
+                       r.address AS address, null AS providedBy, node.stability AS stability, score
                 ORDER BY score DESC, node.name
                 LIMIT $limit
             }
-            RETURN type, name, description, address, providedBy, score
+            RETURN type, name, description, address, providedBy, stability, score
             """.formatted(SEARCH_INDEX, SEARCH_INDEX, SEARCH_INDEX);
 
     private static final String CAPABILITY_REFERENCES_QUERY = """
             MATCH (c:Capability {name: $name})<-[:REFERENCES_CAPABILITY]-(a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource)
             WHERE NOT r.address STARTS WITH '/deployment'
-            RETURN a.name AS attributeName, r.name AS resourceName, r.address AS resourceAddress
+            RETURN a.name AS attributeName, a.stability AS attributeStability,
+                   r.name AS resourceName, r.address AS resourceAddress, r.stability AS resourceStability
             ORDER BY r.address
             """;
 
@@ -192,14 +193,17 @@ public class ModelGraphRepository {
                 record.get("name").asString(null),
                 providedBy,
                 record.get("description").asString(null),
-                record.get("address").asString(null));
+                record.get("address").asString(null),
+                record.get("stability").asString(null));
     }
 
     private static CapabilityReference toCapabilityReference(Record record) {
         return new CapabilityReference(
                 record.get("attributeName").asString(null),
+                record.get("attributeStability").asString(null),
                 record.get("resourceName").asString(null),
-                record.get("resourceAddress").asString(null));
+                record.get("resourceAddress").asString(null),
+                record.get("resourceStability").asString(null));
     }
 
 }

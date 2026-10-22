@@ -20,10 +20,10 @@ class CapabilityResourceTest {
     void referencesReturnsMatchingResources() {
         Mockito.when(repository.capabilityReferences("org.wildfly.network.socket-binding"))
                 .thenReturn(List.of(
-                        new CapabilityReference("socket-binding", "http-listener",
-                                "/subsystem=undertow/server=*/http-listener=*"),
-                        new CapabilityReference("socket-binding", "https-listener",
-                                "/subsystem=undertow/server=*/https-listener=*")));
+                        new CapabilityReference("socket-binding", "default", "http-listener",
+                                "/subsystem=undertow/server=*/http-listener=*", "default"),
+                        new CapabilityReference("socket-binding", "default", "https-listener",
+                                "/subsystem=undertow/server=*/https-listener=*", "default")));
 
         given()
                 .when().get("/api/capability/org.wildfly.network.socket-binding/references")
@@ -33,7 +33,9 @@ class CapabilityResourceTest {
                 .body("references", hasSize(2))
                 .body("references[0].attributeName", is("socket-binding"))
                 .body("references[0].resourceName", is("http-listener"))
-                .body("references[0].resourceAddress", is("/subsystem=undertow/server=*/http-listener=*"));
+                .body("references[0].attributeStability", is("default"))
+                .body("references[0].resourceAddress", is("/subsystem=undertow/server=*/http-listener=*"))
+                .body("references[0].resourceStability", is("default"));
     }
 
     @Test
