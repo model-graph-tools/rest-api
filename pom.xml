@@ -47,8 +47,8 @@
 
     <properties>
         <!-- Dependency versions -->
-        <neo4j-java-driver.version>6.2.1</neo4j-java-driver.version>
-        <neo4j-quarkus.version>6.8.0</neo4j-quarkus.version>
+        <neo4j-java-driver.version>6.3.0</neo4j-java-driver.version>
+        <neo4j-quarkus.version>6.8.1</neo4j-quarkus.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.40.1</quarkus.platform.version>
