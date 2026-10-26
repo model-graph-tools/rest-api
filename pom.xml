@@ -57,7 +57,7 @@
         <!-- Plugin versions -->
         <compiler-plugin.version>3.16.0</compiler-plugin.version>
         <keepachangelog-plugin.version>2.1.1</keepachangelog-plugin.version>
-        <surefire-plugin.version>3.6.0</surefire-plugin.version>
+        <surefire-plugin.version>3.6.1</surefire-plugin.version>
 
         <!-- Build related -->
         <maven.compiler.release>25</maven.compiler.release>
