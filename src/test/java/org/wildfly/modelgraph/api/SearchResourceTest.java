@@ -19,10 +19,10 @@ class SearchResourceTest {
     @Test
     void searchReturnsResults() {
         Mockito.when(repository.search("pool", 10)).thenReturn(List.of(
-                new SearchResult("Resource", "buffer-pool", null, "Defines buffer pool",
-                        "/subsystem=io/buffer-pool=*", "default"),
-                new SearchResult("Attribute", "buffer-pool", null, "The listeners buffer pool",
-                        "/subsystem=undertow/server=*/http-listener=*", "default")));
+                new SearchResult("resource", "buffer-pool", null, "Defines buffer pool",
+                        "/subsystem=io/buffer-pool=*", "default", false),
+                new SearchResult("attribute", "buffer-pool", null, "The listeners buffer pool",
+                        "/subsystem=undertow/server=*/http-listener=*", "default", false)));
 
         given()
                 .queryParam("q", "pool")
@@ -30,11 +30,12 @@ class SearchResourceTest {
                 .then()
                 .statusCode(200)
                 .body("results", hasSize(2))
-                .body("results[0].type", is("Resource"))
+                .body("results[0].type", is("resource"))
                 .body("results[0].name", is("buffer-pool"))
                 .body("results[0].address", is("/subsystem=io/buffer-pool=*"))
                 .body("results[0].stability", is("default"))
-                .body("results[1].type", is("Attribute"))
+                .body("results[0].singleton", is(false))
+                .body("results[1].type", is("attribute"))
                 .body("results[1].name", is("buffer-pool"))
                 .body("results[1].stability", is("default"));
     }
@@ -42,8 +43,8 @@ class SearchResourceTest {
     @Test
     void searchWithCustomLimit() {
         Mockito.when(repository.search("pool", 5)).thenReturn(List.of(
-                new SearchResult("Resource", "buffer-pool", null, "Defines buffer pool",
-                        "/subsystem=io/buffer-pool=*", "default")));
+                new SearchResult("resource", "buffer-pool", null, "Defines buffer pool",
+                        "/subsystem=io/buffer-pool=*", "default", false)));
 
         given()
                 .queryParam("q", "pool")
@@ -75,9 +76,9 @@ class SearchResourceTest {
     @Test
     void searchCapabilityIncludesResources() {
         Mockito.when(repository.search("io.buffer-pool", 10)).thenReturn(List.of(
-                new SearchResult("Capability", "org.wildfly.io.buffer-pool",
+                new SearchResult("capability", "org.wildfly.io.buffer-pool",
                         List.of(new ResourceRef("buffer-pool", "/subsystem=io/buffer-pool=*")),
-                        null, null, "default")));
+                        null, null, "default", null)));
 
         given()
                 .queryParam("q", "io.buffer-pool")
@@ -85,9 +86,10 @@ class SearchResourceTest {
                 .then()
                 .statusCode(200)
                 .body("results", hasSize(1))
-                .body("results[0].type", is("Capability"))
+                .body("results[0].type", is("capability"))
                 .body("results[0].name", is("org.wildfly.io.buffer-pool"))
                 .body("results[0].address", nullValue())
+                .body("results[0].singleton", nullValue())
                 .body("results[0].providedBy", hasSize(1))
                 .body("results[0].providedBy[0].name", is("buffer-pool"))
                 .body("results[0].providedBy[0].address", is("/subsystem=io/buffer-pool=*"));
@@ -96,7 +98,7 @@ class SearchResourceTest {
     @Test
     void searchCapabilityWithoutResourcesOmitsField() {
         Mockito.when(repository.search("some-cap", 10)).thenReturn(List.of(
-                new SearchResult("Capability", "some.capability", null, null, null, "default")));
+                new SearchResult("capability", "some.capability", null, null, null, "default", null)));
 
         given()
                 .queryParam("q", "some-cap")
@@ -109,6 +111,7 @@ class SearchResourceTest {
     @Test
     void searchWithEmptyResultsReturnsEmptyList() {
         Mockito.when(repository.search("nonexistent", 10)).thenReturn(List.of());
+
 
         given()
                 .queryParam("q", "nonexistent")

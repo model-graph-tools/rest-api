@@ -24,9 +24,10 @@ class SearchResourceIT {
                 .then()
                 .statusCode(200)
                 .body("results", not(empty()))
-                .body("results.find { it.type == 'Resource' }.name", is("buffer-pool"))
-                .body("results.find { it.type == 'Resource' }.address", containsString("buffer-pool"))
-                .body("results.find { it.type == 'Resource' }.stability", notNullValue());
+                .body("results.find { it.type == 'resource' }.name", is("buffer-pool"))
+                .body("results.find { it.type == 'resource' }.address", containsString("buffer-pool"))
+                .body("results.find { it.type == 'resource' }.stability", notNullValue())
+                .body("results.find { it.type == 'resource' }.singleton", notNullValue());
     }
 
     @Test
@@ -37,7 +38,7 @@ class SearchResourceIT {
                 .then()
                 .statusCode(200)
                 .body("results", not(empty()))
-                .body("results.findAll { it.type == 'Attribute' }", not(empty()));
+                .body("results.findAll { it.type == 'attribute' }", not(empty()));
     }
 
     @Test
@@ -62,7 +63,7 @@ class SearchResourceIT {
                 .statusCode(200)
                 .extract().jsonPath();
 
-        var types = List.of("Resource", "Attribute", "Capability", "Operation");
+        var types = List.of("resource", "attribute", "capability", "operation");
         for (String type : types) {
             List<String> matched = results.getList(
                     "results.findAll { it.type == '" + type + "' }.name");
@@ -85,7 +86,7 @@ class SearchResourceIT {
                 .extract().jsonPath();
 
         List<Map<String, String>> resources = results.getList(
-                "results.findAll { it.type == 'Resource' }");
+                "results.findAll { it.type == 'resource' }");
         if (resources.size() > 1) {
             boolean seenDescriptionOnly = false;
             for (Map<String, String> r : resources) {
@@ -110,7 +111,7 @@ class SearchResourceIT {
                 .then()
                 .statusCode(200)
                 .body("results", not(empty()))
-                .body("results.find { it.type == 'Resource' }.name", containsString("http-listener"));
+                .body("results.find { it.type == 'resource' }.name", containsString("http-listener"));
     }
 
     @Test
@@ -121,7 +122,7 @@ class SearchResourceIT {
                 .then()
                 .statusCode(200)
                 .body("results", not(empty()))
-                .body("results.findAll { it.type == 'Attribute' }.name", hasItem(containsString("max-pool-size")));
+                .body("results.findAll { it.type == 'attribute' }.name", hasItem(containsString("max-pool-size")));
     }
 
     @Test
@@ -132,7 +133,7 @@ class SearchResourceIT {
                 .then()
                 .statusCode(200)
                 .body("results", not(empty()))
-                .body("results.findAll { it.type == 'Operation' }.name", hasItem(containsString("add-alias")));
+                .body("results.findAll { it.type == 'operation' }.name", hasItem(containsString("add-alias")));
     }
 
     @Test
@@ -143,7 +144,7 @@ class SearchResourceIT {
                 .then()
                 .statusCode(200)
                 .body("results", not(empty()))
-                .body("results.find { it.type == 'Capability' }.name", is("org.wildfly.io.buffer-pool"));
+                .body("results.find { it.type == 'capability' }.name", is("org.wildfly.io.buffer-pool"));
     }
 
     @Test
@@ -153,7 +154,7 @@ class SearchResourceIT {
                 .when().get("/api/search")
                 .then()
                 .statusCode(200)
-                .body("results.findAll { it.type == 'Capability' }", not(empty()));
+                .body("results.findAll { it.type == 'capability' }", not(empty()));
     }
 
     @Test
@@ -163,7 +164,7 @@ class SearchResourceIT {
                 .when().get("/api/search")
                 .then()
                 .statusCode(200)
-                .body("results.findAll { it.type == 'Capability' }.name",
+                .body("results.findAll { it.type == 'capability' }.name",
                         hasItem(containsString("data-source")));
     }
 
@@ -174,7 +175,7 @@ class SearchResourceIT {
                 .when().get("/api/search")
                 .then()
                 .statusCode(200)
-                .body("results.findAll { it.type == 'Capability' }.name",
+                .body("results.findAll { it.type == 'capability' }.name",
                         hasItem(containsString("data-source")));
     }
 
@@ -185,8 +186,8 @@ class SearchResourceIT {
                 .when().get("/api/search")
                 .then()
                 .statusCode(200)
-                .body("results.findAll { it.type == 'Capability' }", not(empty()))
-                .body("results.findAll { it.type == 'Capability' }.name",
+                .body("results.findAll { it.type == 'capability' }", not(empty()))
+                .body("results.findAll { it.type == 'capability' }.name",
                         everyItem(containsString("elytron")));
     }
 
@@ -200,7 +201,7 @@ class SearchResourceIT {
                 .extract().jsonPath();
 
         List<Map<String, Object>> capabilities = results.getList(
-                "results.findAll { it.type == 'Capability' }");
+                "results.findAll { it.type == 'capability' }");
         assertThat("Expected capability results for 'batch'", capabilities, not(empty()));
         boolean anyHasProvidedBy = capabilities.stream()
                 .anyMatch(c -> c.get("providedBy") != null);
@@ -218,7 +219,7 @@ class SearchResourceIT {
                 .extract().jsonPath();
 
         List<Map<String, Object>> capabilities = results.getList(
-                "results.findAll { it.type == 'Capability' }");
+                "results.findAll { it.type == 'capability' }");
         for (Map<String, Object> cap : capabilities) {
             List<Map<String, String>> providedBy = (List<Map<String, String>>) cap.get("providedBy");
             if (providedBy != null) {
@@ -260,7 +261,7 @@ class SearchResourceIT {
                 .then()
                 .statusCode(200)
                 .body("results", not(empty()))
-                .body("results.type", everyItem(isOneOf("Resource", "Attribute", "Capability", "Operation")))
+                .body("results.type", everyItem(isOneOf("resource", "attribute", "capability", "operation")))
                 .body("results.name", everyItem(notNullValue()))
                 .body("results.stability", everyItem(notNullValue()));
     }
