@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-26
+
 ### Fixed
 - Fix native image crash caused by Neo4j Java driver 6.3.0 re-introduced via dependabot (driver pinned back to 6.2.1 until quarkus-neo4j handles the bolt codec SPI in native image)
 
@@ -131,7 +133,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release script and CI workflows (verify + release)
 - Multi-arch native image builds (amd64 + arm64)
 
-[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/model-graph-tools/rest-api/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/model-graph-tools/rest-api/compare/v0.2.9...v0.3.0
 [0.2.9]: https://github.com/model-graph-tools/rest-api/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/model-graph-tools/rest-api/compare/v0.2.7...v0.2.8
