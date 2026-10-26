@@ -9,7 +9,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 
 public class MgtContainerResource implements QuarkusTestResourceLifecycleManager {
 
-    private static final String DEFAULT_IMAGE = "quay.io/modelgraphtools/model:41.0.1";
+    private static final String DEFAULT_IMAGE = "quay.io/modelgraphtools/model:42.0.0";
     private static final int BOLT_PORT = 7687;
 
     private GenericContainer<?> container;
