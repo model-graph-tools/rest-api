@@ -9,7 +9,7 @@ public enum CatalogType {
     OPERATION("operation"),
     CAPABILITY("capability");
 
-    private static final Set<String> ALL_FACETS = Set.of("type", "stability");
+    private static final Set<String> ALL_FACETS = Set.of("type", "stability", "deprecated");
 
     private final String label;
 
