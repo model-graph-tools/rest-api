@@ -27,6 +27,9 @@ public final class CatalogFilter {
     private final Boolean expressions;
     private final List<String> units;
     private final Boolean hasAllowed;
+    private final Boolean sensitive;
+    private final Boolean hasRelationships;
+    private final String refsCap;
     private final Boolean readOnly;
     private final Boolean runtimeOnly;
     private final Boolean global;
@@ -43,6 +46,7 @@ public final class CatalogFilter {
             List<String> dataTypes, List<String> accessTypes, List<String> storageValues,
             List<String> restartValues, Boolean required, Boolean nillable, Boolean expressions,
             List<String> units, Boolean hasAllowed,
+            Boolean sensitive, Boolean hasRelationships, String refsCap,
             Boolean readOnly, Boolean runtimeOnly, Boolean global,
             Boolean hasParams, Boolean hasReturnValue,
             String sort, String order, int limit, int offset) {
@@ -63,6 +67,9 @@ public final class CatalogFilter {
         this.expressions = expressions;
         this.units = units;
         this.hasAllowed = hasAllowed;
+        this.sensitive = sensitive;
+        this.hasRelationships = hasRelationships;
+        this.refsCap = refsCap;
         this.readOnly = readOnly;
         this.runtimeOnly = runtimeOnly;
         this.global = global;
@@ -80,6 +87,7 @@ public final class CatalogFilter {
             String dataType, String accessType, String storage, String restart,
             Boolean required, Boolean nillable, Boolean expressions,
             String unit, Boolean hasAllowed,
+            Boolean sensitive, Boolean hasRelationships, String refsCap,
             Boolean readOnly, Boolean runtimeOnly, Boolean global,
             Boolean hasParams, Boolean hasReturnValue,
             String sort, String order, Integer limit, Integer offset) {
@@ -96,6 +104,9 @@ public final class CatalogFilter {
         List<String> storageValues = parseMultiValue(storage);
         List<String> restartValues = parseMultiValue(restart);
         List<String> units = parseMultiValue(unit);
+        String effectiveRefsCap = (refsCap != null && !refsCap.isBlank())
+                ? refsCap.strip().toLowerCase()
+                : null;
         String effectiveSort = parseSort(sort, effectiveQ);
         String effectiveOrder = parseOrder(order);
         int effectiveLimit = (limit != null && limit > 0) ? limit : DEFAULT_LIMIT;
@@ -104,6 +115,7 @@ public final class CatalogFilter {
                 singleton, effectiveDeclaresCap, definesAttrGroups,
                 dataTypes, accessTypes, storageValues, restartValues, required, nillable,
                 expressions, units, hasAllowed,
+                sensitive, hasRelationships, effectiveRefsCap,
                 readOnly, runtimeOnly, global, hasParams, hasReturnValue,
                 effectiveSort, effectiveOrder, effectiveLimit, effectiveOffset);
     }
@@ -174,6 +186,18 @@ public final class CatalogFilter {
 
     public Boolean hasAllowed() {
         return hasAllowed;
+    }
+
+    public Boolean sensitive() {
+        return sensitive;
+    }
+
+    public Boolean hasRelationships() {
+        return hasRelationships;
+    }
+
+    public String refsCap() {
+        return refsCap;
     }
 
     public Boolean readOnly() {
@@ -296,10 +320,39 @@ public final class CatalogFilter {
         return hasAllowed != null;
     }
 
+    public boolean hasSensitiveFilter() {
+        return sensitive != null;
+    }
+
+    public boolean hasHasRelationshipsFilter() {
+        return hasRelationships != null;
+    }
+
+    public boolean hasRefsCapFilter() {
+        return refsCap != null;
+    }
+
+    public boolean refsCapIsYes() {
+        return "yes".equals(refsCap);
+    }
+
+    public boolean refsCapIsNo() {
+        return "no".equals(refsCap);
+    }
+
+    public String refsCapContains() {
+        if (refsCap != null && refsCap.startsWith("contains:")) {
+            String text = refsCap.substring("contains:".length()).strip();
+            return text.isEmpty() ? null : text;
+        }
+        return null;
+    }
+
     public boolean hasAnyAttributeFilter() {
         return hasDataTypeFilter() || hasAccessTypeFilter() || hasStorageFilter()
                 || hasRestartFilter() || hasRequiredFilter() || hasNillableFilter()
-                || hasExpressionsFilter() || hasUnitFilter() || hasHasAllowedFilter();
+                || hasExpressionsFilter() || hasUnitFilter() || hasHasAllowedFilter()
+                || hasSensitiveFilter() || hasHasRelationshipsFilter() || hasRefsCapFilter();
     }
 
     public boolean hasReadOnlyFilter() {

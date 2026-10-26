@@ -364,6 +364,38 @@ class CatalogResourceTest {
     }
 
     @Test
+    void sensitiveFilterPassesToRepository() {
+        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+
+        given()
+                .queryParam("sensitive", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200);
+
+        Mockito.verify(repository).search(Mockito.argThat(filter ->
+                filter.hasSensitiveFilter() && filter.sensitive()));
+    }
+
+    @Test
+    void refsCapFilterPassesToRepository() {
+        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+
+        given()
+                .queryParam("refsCap", "contains:io")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200);
+
+        Mockito.verify(repository).search(Mockito.argThat(filter ->
+                filter.hasRefsCapFilter() && "io".equals(filter.refsCapContains())));
+    }
+
+    @Test
     void hasParamsBooleanFilterPassesThrough() {
         List<CatalogResult> results = List.of(
                 new CatalogResult("operation", "add", "Adds resource",

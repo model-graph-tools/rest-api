@@ -34,6 +34,9 @@ public class CatalogResource {
             @QueryParam("expressions") Boolean expressions,
             @QueryParam("unit") String unit,
             @QueryParam("hasAllowed") Boolean hasAllowed,
+            @QueryParam("sensitive") Boolean sensitive,
+            @QueryParam("hasRelationships") Boolean hasRelationships,
+            @QueryParam("refsCap") String refsCap,
             @QueryParam("readOnly") Boolean readOnly,
             @QueryParam("runtimeOnly") Boolean runtimeOnly,
             @QueryParam("global") Boolean global,
@@ -48,6 +51,7 @@ public class CatalogResource {
                 singleton, declaresCap, definesAttrGroups,
                 dataType, accessType, storage, restart, required, nillable, expressions,
                 unit, hasAllowed,
+                sensitive, hasRelationships, refsCap,
                 readOnly, runtimeOnly, global, hasParams, hasReturnValue,
                 sort, order, limit, offset);
         var results = repository.search(filter);

@@ -665,6 +665,144 @@ class CatalogResourceIT {
                 response.get("results[0].properties.hasReturnValue"), instanceOf(Boolean.class));
     }
 
+    // ------------------------------------------------------ relationship-based attribute facets
+
+    @Test
+    void sensitiveTrueReturnsSensitiveAttributes() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("sensitive", true)
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be attributes", types, everyItem(is("attribute")));
+
+        List<Boolean> sensitiveValues = response.getList("results.properties.sensitive");
+        if (!sensitiveValues.isEmpty()) {
+            assertThat("All results should be sensitive", sensitiveValues, everyItem(is(true)));
+        }
+    }
+
+    @Test
+    void hasRelationshipsTrueReturnsAttributesWithRelationships() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("hasRelationships", true)
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be attributes", types, everyItem(is("attribute")));
+    }
+
+    @Test
+    void refsCapYesReturnsAttributesReferencingCapabilities() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("refsCap", "yes")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be attributes", types, everyItem(is("attribute")));
+    }
+
+    @Test
+    void refsCapContainsReturnsMatchingAttributes() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("refsCap", "contains:io")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        if (!types.isEmpty()) {
+            assertThat("All results should be attributes", types, everyItem(is("attribute")));
+        }
+    }
+
+    @Test
+    void dataTypeComplexReturnsComplexAttributes() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("dataType", "complex")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        if (!types.isEmpty()) {
+            assertThat("All results should be attributes", types, everyItem(is("attribute")));
+
+            List<String> dataTypes = response.getList("results.properties.dataType");
+            assertThat("All results should have dataType complex", dataTypes, everyItem(is("complex")));
+        }
+    }
+
+    @Test
+    void dataTypeStringAndComplexReturnsOrSemantics() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("dataType", "string,complex")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be attributes", types, everyItem(is("attribute")));
+
+        List<String> dataTypes = response.getList("results.properties.dataType");
+        assertThat("All results should have dataType string or complex",
+                dataTypes, everyItem(isOneOf("string", "complex")));
+    }
+
+    @Test
+    void relationshipBasedFacetsPresentForAttributes() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> facets = response.getMap("facets");
+        assertThat("facets should contain sensitive", facets, hasKey("sensitive"));
+        assertThat("facets should contain hasRelationships", facets, hasKey("hasRelationships"));
+        assertThat("facets should contain refsCap", facets, hasKey("refsCap"));
+    }
+
+    @Test
+    void relationshipBasedFacetsOmittedWhenTypeIsResource() {
+        var response = given()
+                .queryParam("type", "resource")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> facets = response.getMap("facets");
+        assertThat("sensitive facet should be absent for resources", facets, not(hasKey("sensitive")));
+        assertThat("hasRelationships facet should be absent for resources", facets, not(hasKey("hasRelationships")));
+        assertThat("refsCap facet should be absent for resources", facets, not(hasKey("refsCap")));
+    }
+
     @Test
     void operationFacetsOmittedWhenTypeIsResource() {
         var response = given()

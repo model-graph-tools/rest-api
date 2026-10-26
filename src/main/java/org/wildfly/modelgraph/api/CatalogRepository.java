@@ -76,8 +76,7 @@ public class CatalogRepository {
 
         // Attribute-specific facets
         if (applicable.contains("dataType")) {
-            facets.put("dataType", multiValueAttributeFacetCounts(filter, "dataType",
-                    "toLower(a.type)", "dataTypes"));
+            facets.put("dataType", dataTypeFacetCounts(filter));
         }
         if (applicable.contains("accessType")) {
             facets.put("accessType", multiValueAttributeFacetCounts(filter, "accessType",
@@ -109,6 +108,15 @@ public class CatalogRepository {
         }
         if (applicable.contains("hasAllowed")) {
             facets.put("hasAllowed", hasAllowedFacetCounts(filter));
+        }
+        if (applicable.contains("sensitive")) {
+            facets.put("sensitive", sensitiveFacetCounts(filter));
+        }
+        if (applicable.contains("hasRelationships")) {
+            facets.put("hasRelationships", hasRelationshipsFacetCounts(filter));
+        }
+        if (applicable.contains("refsCap")) {
+            facets.put("refsCap", refsCapFacetCounts(filter));
         }
 
         // Operation-specific facets
@@ -432,11 +440,11 @@ public class CatalogRepository {
             sb.append("\nRETURN 'attribute' AS type, node.name AS name, node.description AS description, ");
             sb.append("r.address + '/' + node.name AS address, r.address AS resourceAddress, toLower(node.stability) AS stability, ");
             sb.append("coalesce(node.deprecated, false) AS deprecated, ");
-            sb.append("{dataType: toLower(node.type), accessType: toLower(node.`access-type`), ");
+            sb.append("{dataType: CASE WHEN EXISTS { (node)-[:CONSISTS_OF]->() } THEN 'complex' ELSE toLower(node.type) END, accessType: toLower(node.`access-type`), ");
             sb.append("storage: toLower(node.storage), restart: toLower(node.`restart-required`), ");
             sb.append("required: coalesce(node.required, false), nillable: coalesce(node.nillable, false), ");
             sb.append("expressions: coalesce(node.`expressions-allowed`, false), ");
-            sb.append("sensitive: false, unit: toLower(node.unit)} AS properties");
+            sb.append("sensitive: EXISTS { (node)-[:IS_SENSITIVE]->() }, unit: toLower(node.unit)} AS properties");
             if (includesResource) {
                 sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
             }
@@ -454,11 +462,11 @@ public class CatalogRepository {
             sb.append("\nRETURN 'attribute' AS type, a.name AS name, a.description AS description, ");
             sb.append("r.address + '/' + a.name AS address, r.address AS resourceAddress, toLower(a.stability) AS stability, ");
             sb.append("coalesce(a.deprecated, false) AS deprecated, ");
-            sb.append("{dataType: toLower(a.type), accessType: toLower(a.`access-type`), ");
+            sb.append("{dataType: CASE WHEN EXISTS { (a)-[:CONSISTS_OF]->() } THEN 'complex' ELSE toLower(a.type) END, accessType: toLower(a.`access-type`), ");
             sb.append("storage: toLower(a.storage), restart: toLower(a.`restart-required`), ");
             sb.append("required: coalesce(a.required, false), nillable: coalesce(a.nillable, false), ");
             sb.append("expressions: coalesce(a.`expressions-allowed`, false), ");
-            sb.append("sensitive: false, unit: toLower(a.unit)} AS properties");
+            sb.append("sensitive: EXISTS { (a)-[:IS_SENSITIVE]->() }, unit: toLower(a.unit)} AS properties");
             if (includesResource) {
                 sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
             }
@@ -620,12 +628,69 @@ public class CatalogRepository {
         }
     }
 
+    // ------------------------------------------------------ relationship-based attribute where helpers
+
+    private void appendDataTypeFilter(StringBuilder sb, CatalogFilter filter, String nodeVar) {
+        if (!filter.hasDataTypeFilter()) {
+            return;
+        }
+        List<String> dataTypes = filter.dataTypes();
+        boolean includesComplex = dataTypes.contains("complex");
+        List<String> scalarTypes = dataTypes.stream().filter(t -> !"complex".equals(t)).toList();
+
+        if (includesComplex && scalarTypes.isEmpty()) {
+            sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:CONSISTS_OF]->() }");
+        } else if (includesComplex) {
+            sb.append(" AND (EXISTS { (").append(nodeVar).append(")-[:CONSISTS_OF]->() } OR toLower(")
+                    .append(nodeVar).append(".type) IN $dataTypes)");
+        } else {
+            sb.append(" AND toLower(").append(nodeVar).append(".type) IN $dataTypes");
+        }
+    }
+
+    private void appendSensitiveWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+        if (filter.hasSensitiveFilter()) {
+            if (filter.sensitive()) {
+                sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:IS_SENSITIVE]->() }");
+            } else {
+                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:IS_SENSITIVE]->() }");
+            }
+        }
+    }
+
+    private void appendHasRelationshipsWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+        if (filter.hasHasRelationshipsFilter()) {
+            if (filter.hasRelationships()) {
+                sb.append(" AND (EXISTS { (").append(nodeVar).append(")-[:REQUIRES]->() } OR EXISTS { (")
+                        .append(nodeVar).append(")-[:ALTERNATIVE]->() })");
+            } else {
+                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:REQUIRES]->() } AND NOT EXISTS { (")
+                        .append(nodeVar).append(")-[:ALTERNATIVE]->() }");
+            }
+        }
+    }
+
+    private void appendRefsCapWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+        if (!filter.hasRefsCapFilter()) {
+            return;
+        }
+        if (filter.refsCapIsYes()) {
+            sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:REFERENCES_CAPABILITY]->() }");
+        } else if (filter.refsCapIsNo()) {
+            sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:REFERENCES_CAPABILITY]->() }");
+        } else {
+            String text = filter.refsCapContains();
+            if (text != null) {
+                sb.append(" AND EXISTS { (").append(nodeVar)
+                        .append(")-[:REFERENCES_CAPABILITY]->(cap:Capability) WHERE toLower(cap.name) CONTAINS $refsCapText }");
+            }
+        }
+    }
+
     // ------------------------------------------------------ attribute filter helpers
 
     private void appendAttributeFilters(StringBuilder sb, CatalogFilter filter, String nodeVar) {
-        if (filter.hasDataTypeFilter()) {
-            sb.append(" AND toLower(").append(nodeVar).append(".type) IN $dataTypes");
-        }
+        appendDataTypeFilter(sb, filter, nodeVar);
         if (filter.hasAccessTypeFilter()) {
             sb.append(" AND toLower(").append(nodeVar).append(".`access-type`) IN $accessTypes");
         }
@@ -654,12 +719,15 @@ public class CatalogRepository {
                 sb.append(" AND ").append(nodeVar).append(".`allowed-values` IS NULL");
             }
         }
+        appendSensitiveWhere(sb, nodeVar, filter);
+        appendHasRelationshipsWhere(sb, nodeVar, filter);
+        appendRefsCapWhere(sb, nodeVar, filter);
     }
 
     private void appendAttributeFiltersExcluding(StringBuilder sb, CatalogFilter filter,
             String excludeFacet, String nodeVar) {
-        if (filter.hasDataTypeFilter() && !"dataType".equals(excludeFacet)) {
-            sb.append(" AND toLower(").append(nodeVar).append(".type) IN $dataTypes");
+        if (!"dataType".equals(excludeFacet)) {
+            appendDataTypeFilter(sb, filter, nodeVar);
         }
         if (filter.hasAccessTypeFilter() && !"accessType".equals(excludeFacet)) {
             sb.append(" AND toLower(").append(nodeVar).append(".`access-type`) IN $accessTypes");
@@ -688,6 +756,15 @@ public class CatalogRepository {
             } else {
                 sb.append(" AND ").append(nodeVar).append(".`allowed-values` IS NULL");
             }
+        }
+        if (!"sensitive".equals(excludeFacet)) {
+            appendSensitiveWhere(sb, nodeVar, filter);
+        }
+        if (!"hasRelationships".equals(excludeFacet)) {
+            appendHasRelationshipsWhere(sb, nodeVar, filter);
+        }
+        if (!"refsCap".equals(excludeFacet)) {
+            appendRefsCapWhere(sb, nodeVar, filter);
         }
     }
 
@@ -1160,6 +1237,154 @@ public class CatalogRepository {
         }
     }
 
+    // ------------------------------------------------------ relationship-based attribute facet counts
+
+    private Map<String, Long> dataTypeFacetCounts(CatalogFilter filter) {
+        StringBuilder query = new StringBuilder();
+        if (filter.hasSearchQuery()) {
+            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
+            query.append("WHERE node:Attribute\n");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
+            appendStabilityWhere(query, "node", filter);
+            appendDeprecatedWhere(query, "node", filter);
+            appendScopeWhere(query, "r", filter);
+            appendAttributeFiltersExcluding(query, filter, "dataType", "node");
+            query.append("\nWITH CASE WHEN EXISTS { (node)-[:CONSISTS_OF]->() } THEN 'complex' ELSE toLower(node.type) END AS value");
+        } else {
+            query.append(
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
+            appendStabilityWhere(query, "a", filter);
+            appendDeprecatedWhere(query, "a", filter);
+            appendScopeWhere(query, "r", filter);
+            appendAttributeFiltersExcluding(query, filter, "dataType", "a");
+            query.append("\nWITH CASE WHEN EXISTS { (a)-[:CONSISTS_OF]->() } THEN 'complex' ELSE toLower(a.type) END AS value");
+        }
+        query.append("\nWHERE value IS NOT NULL");
+        query.append("\nRETURN value, count(*) AS count");
+
+        Map<String, Object> params = buildFacetParams(filter);
+        addAttributeFilterParamsExcluding(params, filter, "dataTypes");
+
+        try (var session = driver.session()) {
+            Map<String, Long> counts = new LinkedHashMap<>();
+            session.run(query.toString(), params).list().forEach(record ->
+                    counts.put(record.get("value").asString(), record.get("count").asLong()));
+            return counts;
+        }
+    }
+
+    private Map<String, Long> sensitiveFacetCounts(CatalogFilter filter) {
+        StringBuilder query = new StringBuilder();
+        String nodeVar;
+        if (filter.hasSearchQuery()) {
+            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
+            query.append("WHERE node:Attribute\n");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
+            appendStabilityWhere(query, "node", filter);
+            appendDeprecatedWhere(query, "node", filter);
+            appendScopeWhere(query, "r", filter);
+            appendAttributeFiltersExcluding(query, filter, "sensitive", "node");
+            nodeVar = "node";
+        } else {
+            query.append(
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
+            appendStabilityWhere(query, "a", filter);
+            appendDeprecatedWhere(query, "a", filter);
+            appendScopeWhere(query, "r", filter);
+            appendAttributeFiltersExcluding(query, filter, "sensitive", "a");
+            nodeVar = "a";
+        }
+        query.append("\nRETURN CASE WHEN EXISTS { (").append(nodeVar)
+                .append(")-[:IS_SENSITIVE]->() } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+
+        Map<String, Object> params = buildFacetParams(filter);
+        addAttributeFilterParamsExcluding(params, filter, null);
+
+        try (var session = driver.session()) {
+            Map<String, Long> counts = new LinkedHashMap<>();
+            session.run(query.toString(), params).list().forEach(record ->
+                    counts.put(record.get("value").asString(), record.get("count").asLong()));
+            counts.putIfAbsent("yes", 0L);
+            counts.putIfAbsent("no", 0L);
+            return counts;
+        }
+    }
+
+    private Map<String, Long> hasRelationshipsFacetCounts(CatalogFilter filter) {
+        StringBuilder query = new StringBuilder();
+        String nodeVar;
+        if (filter.hasSearchQuery()) {
+            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
+            query.append("WHERE node:Attribute\n");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
+            appendStabilityWhere(query, "node", filter);
+            appendDeprecatedWhere(query, "node", filter);
+            appendScopeWhere(query, "r", filter);
+            appendAttributeFiltersExcluding(query, filter, "hasRelationships", "node");
+            nodeVar = "node";
+        } else {
+            query.append(
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
+            appendStabilityWhere(query, "a", filter);
+            appendDeprecatedWhere(query, "a", filter);
+            appendScopeWhere(query, "r", filter);
+            appendAttributeFiltersExcluding(query, filter, "hasRelationships", "a");
+            nodeVar = "a";
+        }
+        query.append("\nRETURN CASE WHEN EXISTS { (").append(nodeVar)
+                .append(")-[:REQUIRES]->() } OR EXISTS { (").append(nodeVar)
+                .append(")-[:ALTERNATIVE]->() } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+
+        Map<String, Object> params = buildFacetParams(filter);
+        addAttributeFilterParamsExcluding(params, filter, null);
+
+        try (var session = driver.session()) {
+            Map<String, Long> counts = new LinkedHashMap<>();
+            session.run(query.toString(), params).list().forEach(record ->
+                    counts.put(record.get("value").asString(), record.get("count").asLong()));
+            counts.putIfAbsent("yes", 0L);
+            counts.putIfAbsent("no", 0L);
+            return counts;
+        }
+    }
+
+    private Map<String, Long> refsCapFacetCounts(CatalogFilter filter) {
+        StringBuilder query = new StringBuilder();
+        String nodeVar;
+        if (filter.hasSearchQuery()) {
+            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
+            query.append("WHERE node:Attribute\n");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
+            appendStabilityWhere(query, "node", filter);
+            appendDeprecatedWhere(query, "node", filter);
+            appendScopeWhere(query, "r", filter);
+            appendAttributeFiltersExcluding(query, filter, "refsCap", "node");
+            nodeVar = "node";
+        } else {
+            query.append(
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
+            appendStabilityWhere(query, "a", filter);
+            appendDeprecatedWhere(query, "a", filter);
+            appendScopeWhere(query, "r", filter);
+            appendAttributeFiltersExcluding(query, filter, "refsCap", "a");
+            nodeVar = "a";
+        }
+        query.append("\nRETURN CASE WHEN EXISTS { (").append(nodeVar)
+                .append(")-[:REFERENCES_CAPABILITY]->() } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+
+        Map<String, Object> params = buildFacetParams(filter);
+        addAttributeFilterParamsExcluding(params, filter, null);
+
+        try (var session = driver.session()) {
+            Map<String, Long> counts = new LinkedHashMap<>();
+            session.run(query.toString(), params).list().forEach(record ->
+                    counts.put(record.get("value").asString(), record.get("count").asLong()));
+            counts.putIfAbsent("yes", 0L);
+            counts.putIfAbsent("no", 0L);
+            return counts;
+        }
+    }
+
     // ------------------------------------------------------ operation facet counts
 
     private Map<String, Long> booleanOperationFacetCounts(CatalogFilter filter, String facetName, String propertyName) {
@@ -1299,11 +1524,18 @@ public class CatalogRepository {
         if (declaresCapText != null) {
             params.put("declaresCapText", declaresCapText);
         }
+        String refsCapText = filter.refsCapContains();
+        if (refsCapText != null) {
+            params.put("refsCapText", refsCapText);
+        }
     }
 
     private void addAttributeFilterParams(Map<String, Object> params, CatalogFilter filter) {
         if (filter.hasDataTypeFilter()) {
-            params.put("dataTypes", filter.dataTypes());
+            List<String> scalarTypes = filter.dataTypes().stream().filter(t -> !"complex".equals(t)).toList();
+            if (!scalarTypes.isEmpty()) {
+                params.put("dataTypes", scalarTypes);
+            }
         }
         if (filter.hasAccessTypeFilter()) {
             params.put("accessTypes", filter.accessTypes());
@@ -1331,7 +1563,10 @@ public class CatalogRepository {
     private void addAttributeFilterParamsExcluding(Map<String, Object> params,
             CatalogFilter filter, String excludeParam) {
         if (filter.hasDataTypeFilter() && !"dataTypes".equals(excludeParam)) {
-            params.put("dataTypes", filter.dataTypes());
+            List<String> scalarTypes = filter.dataTypes().stream().filter(t -> !"complex".equals(t)).toList();
+            if (!scalarTypes.isEmpty()) {
+                params.put("dataTypes", scalarTypes);
+            }
         }
         if (filter.hasAccessTypeFilter() && !"accessTypes".equals(excludeParam)) {
             params.put("accessTypes", filter.accessTypes());
