@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-26
+
 ### Added
 - Add `GET /api/catalog` endpoint — faceted search across resources, attributes, operations, and capabilities with paginated results and facet counts
 - Support 30+ filter dimensions: type, stability, deprecated, scope, keyword search, sort/order, and type-specific facets for resources (singleton, declaresCap, definesAttrGroups), attributes (dataType, accessType, storage, restart, required, nillable, expressions, sensitive, hasAllowed, unit, hasRelationships, refsCap), and operations (readOnly, runtimeOnly, global, hasParams, hasReturnValue)
@@ -126,7 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release script and CI workflows (verify + release)
 - Multi-arch native image builds (amd64 + arm64)
 
-[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.2.9...HEAD
+[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/model-graph-tools/rest-api/compare/v0.2.9...v0.3.0
 [0.2.9]: https://github.com/model-graph-tools/rest-api/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/model-graph-tools/rest-api/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/model-graph-tools/rest-api/compare/v0.2.6...v0.2.7
