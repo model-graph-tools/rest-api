@@ -6,5 +6,6 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record ResourceProperties() implements Properties {
+public record ResourceProperties(boolean singleton, boolean declaresCap, boolean definesAttrGroups)
+        implements Properties {
 }

@@ -149,6 +149,125 @@ class CatalogResourceIT {
     }
 
     @Test
+    void singletonTrueReturnsOnlySingletonResources() {
+        var response = given()
+                .queryParam("type", "resource")
+                .queryParam("singleton", true)
+                .queryParam("limit", 50)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<Boolean> singletons = response.getList("results.properties.singleton");
+        assertThat("All results should be singletons", singletons, everyItem(is(true)));
+    }
+
+    @Test
+    void declaresCapYesReturnsResourcesWithCapabilities() {
+        var response = given()
+                .queryParam("type", "resource")
+                .queryParam("declaresCap", "yes")
+                .queryParam("limit", 50)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<Boolean> declaresCaps = response.getList("results.properties.declaresCap");
+        assertThat("All results should declare capabilities", declaresCaps, everyItem(is(true)));
+    }
+
+    @Test
+    void declaresCapContainsReturnsMatchingResources() {
+        var response = given()
+                .queryParam("type", "resource")
+                .queryParam("declaresCap", "contains:io")
+                .queryParam("limit", 50)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<Boolean> declaresCaps = response.getList("results.properties.declaresCap");
+        if (!declaresCaps.isEmpty()) {
+            assertThat("All results should declare capabilities", declaresCaps, everyItem(is(true)));
+        }
+    }
+
+    @Test
+    void definesAttrGroupsTrueReturnsResourcesWithAttributeGroups() {
+        var response = given()
+                .queryParam("type", "resource")
+                .queryParam("definesAttrGroups", true)
+                .queryParam("limit", 50)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<Boolean> definesGroups = response.getList("results.properties.definesAttrGroups");
+        if (!definesGroups.isEmpty()) {
+            assertThat("All results should define attribute groups", definesGroups, everyItem(is(true)));
+        }
+    }
+
+    @Test
+    void resourceResultsIncludeProperties() {
+        var response = given()
+                .queryParam("type", "resource")
+                .queryParam("limit", 10)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<Map<String, Object>> results = response.getList("results");
+        for (Map<String, Object> result : results) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> properties = (Map<String, Object>) result.get("properties");
+            assertThat("Resource should have properties", properties, notNullValue());
+            assertThat("Properties should have singleton", properties, hasKey("singleton"));
+            assertThat("Properties should have declaresCap", properties, hasKey("declaresCap"));
+            assertThat("Properties should have definesAttrGroups", properties, hasKey("definesAttrGroups"));
+        }
+    }
+
+    @Test
+    void resourceFacetsOmittedWhenTypeIsAttribute() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> facets = response.getMap("facets");
+        assertThat("Facets should have type", facets, hasKey("type"));
+        assertThat("Facets should have stability", facets, hasKey("stability"));
+        assertThat("Facets should not have singleton", facets, not(hasKey("singleton")));
+        assertThat("Facets should not have declaresCap", facets, not(hasKey("declaresCap")));
+        assertThat("Facets should not have definesAttrGroups", facets, not(hasKey("definesAttrGroups")));
+    }
+
+    @Test
+    void resourceFacetsIncludedWhenNoTypeFilter() {
+        var response = given()
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> facets = response.getMap("facets");
+        assertThat("Facets should have singleton", facets, hasKey("singleton"));
+        assertThat("Facets should have declaresCap", facets, hasKey("declaresCap"));
+        assertThat("Facets should have definesAttrGroups", facets, hasKey("definesAttrGroups"));
+    }
+
+    @Test
     void allTypeAndStabilityValuesAreLowercase() {
         var response = given()
                 .queryParam("limit", 100)

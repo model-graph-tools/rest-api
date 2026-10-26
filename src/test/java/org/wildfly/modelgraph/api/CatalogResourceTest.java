@@ -93,6 +93,61 @@ class CatalogResourceTest {
     }
 
     @Test
+    void singletonFilterPassesToRepository() {
+        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+
+        given()
+                .queryParam("singleton", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200);
+
+        Mockito.verify(repository).search(Mockito.argThat(filter ->
+                filter.hasSingletonFilter() && filter.singleton()));
+    }
+
+    @Test
+    void declaresCapFilterPassesToRepository() {
+        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+
+        given()
+                .queryParam("declaresCap", "contains:io")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200);
+
+        Mockito.verify(repository).search(Mockito.argThat(filter ->
+                filter.hasDeclaresCapFilter() && "io".equals(filter.declaresCapContains())));
+    }
+
+    @Test
+    void resourceResultsIncludeProperties() {
+        List<CatalogResult> results = List.of(
+                new CatalogResult("resource", "buffer-pool", "A buffer pool", "/subsystem=io/buffer-pool=*",
+                        null, "default", false, new ResourceProperties(true, false, true)));
+        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
+        facets.put("type", Map.of("resource", 1L));
+        facets.put("stability", Map.of("default", 1L));
+
+        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(1);
+        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+
+        given()
+                .queryParam("type", "resource")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results[0].properties.singleton", is(true))
+                .body("results[0].properties.declaresCap", is(false))
+                .body("results[0].properties.definesAttrGroups", is(true));
+    }
+
+    @Test
     void customPaginationValues() {
         Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);

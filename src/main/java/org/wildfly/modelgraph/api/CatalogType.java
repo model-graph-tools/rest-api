@@ -4,17 +4,19 @@ import java.util.Set;
 
 public enum CatalogType {
 
-    RESOURCE("resource"),
-    ATTRIBUTE("attribute"),
-    OPERATION("operation"),
-    CAPABILITY("capability");
+    RESOURCE("resource", Set.of("type", "stability", "deprecated", "singleton", "declaresCap", "definesAttrGroups")),
+    ATTRIBUTE("attribute", Set.of("type", "stability", "deprecated")),
+    OPERATION("operation", Set.of("type", "stability", "deprecated")),
+    CAPABILITY("capability", Set.of("type", "stability", "deprecated"));
 
-    private static final Set<String> ALL_FACETS = Set.of("type", "stability", "deprecated");
+    private static final Set<String> COMMON_FACETS = Set.of("type", "stability", "deprecated");
 
     private final String label;
+    private final Set<String> facets;
 
-    CatalogType(String label) {
+    CatalogType(String label, Set<String> facets) {
         this.label = label;
+        this.facets = facets;
     }
 
     public String label() {
@@ -22,7 +24,11 @@ public enum CatalogType {
     }
 
     public Set<String> applicableFacets() {
-        return ALL_FACETS;
+        return facets;
+    }
+
+    public static Set<String> commonFacets() {
+        return COMMON_FACETS;
     }
 
     public static CatalogType fromLabel(String label) {

@@ -22,12 +22,16 @@ public class CatalogResource {
             @QueryParam("stability") String stability,
             @QueryParam("deprecated") String deprecated,
             @QueryParam("scope") String scope,
+            @QueryParam("singleton") Boolean singleton,
+            @QueryParam("declaresCap") String declaresCap,
+            @QueryParam("definesAttrGroups") Boolean definesAttrGroups,
             @QueryParam("sort") String sort,
             @QueryParam("order") String order,
             @QueryParam("limit") Integer limit,
             @QueryParam("offset") Integer offset) {
 
-        CatalogFilter filter = CatalogFilter.of(q, type, stability, deprecated, scope, sort, order, limit, offset);
+        CatalogFilter filter = CatalogFilter.of(q, type, stability, deprecated, scope, singleton,
+                declaresCap, definesAttrGroups, sort, order, limit, offset);
         var results = repository.search(filter);
         int total = repository.total(filter);
         var facets = repository.facetCounts(filter);
