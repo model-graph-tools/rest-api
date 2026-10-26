@@ -314,8 +314,8 @@ public class CatalogRepository {
         query.append("CALL {\n");
         appendUnionBranches(query, filter);
         query.append("}\n");
-        boolean includesResource = filter.includesType(CatalogType.RESOURCE);
-        boolean includesOperation = filter.includesType(CatalogType.OPERATION);
+        boolean includesResource = effectiveIncludesResource(filter);
+        boolean includesOperation = effectiveIncludesOperation(filter);
         StringBuilder returnClause = new StringBuilder();
         returnClause.append("RETURN type, name, description, address, resourceAddress, stability, deprecated, properties");
         if (includesResource) {
@@ -359,28 +359,62 @@ public class CatalogRepository {
         }
     }
 
+    // ------------------------------------------------------ effective type includes
+
+    private boolean effectiveIncludesResource(CatalogFilter filter) {
+        return filter.includesType(CatalogType.RESOURCE)
+                && !filter.hasAnyAttributeFilter() && !filter.hasAnyOperationFilter();
+    }
+
+    private boolean effectiveIncludesAttribute(CatalogFilter filter) {
+        return filter.includesType(CatalogType.ATTRIBUTE)
+                && !filter.hasAnyOperationFilter() && !filter.hasAnyResourceFilter();
+    }
+
+    private boolean effectiveIncludesOperation(CatalogFilter filter) {
+        return filter.includesType(CatalogType.OPERATION)
+                && !filter.hasAnyAttributeFilter() && !filter.hasAnyResourceFilter();
+    }
+
+    private boolean effectiveIncludesCapability(CatalogFilter filter) {
+        return filter.includesType(CatalogType.CAPABILITY)
+                && !filter.hasAnyAttributeFilter() && !filter.hasAnyOperationFilter()
+                && !filter.hasAnyResourceFilter();
+    }
+
     // ------------------------------------------------------ union branches
 
     private void appendUnionBranches(StringBuilder query, CatalogFilter filter) {
         List<String> branches = new ArrayList<>();
-        boolean includesResource = filter.includesType(CatalogType.RESOURCE);
-        boolean includesOperation = filter.includesType(CatalogType.OPERATION);
+        boolean includesResource = effectiveIncludesResource(filter);
+        boolean includesAttribute = effectiveIncludesAttribute(filter);
+        boolean includesOperation = effectiveIncludesOperation(filter);
+        boolean includesCapability = effectiveIncludesCapability(filter);
 
         if (includesResource) {
             branches.add(resourceBranch(filter, includesOperation));
         }
-        if (filter.includesType(CatalogType.ATTRIBUTE)) {
+        if (includesAttribute) {
             branches.add(attributeBranch(filter, includesResource, includesOperation));
         }
         if (includesOperation) {
             branches.add(operationBranch(filter, includesResource));
         }
-        if (filter.includesType(CatalogType.CAPABILITY)) {
+        if (includesCapability) {
             branches.add(capabilityBranch(filter, includesResource, includesOperation));
         }
 
-        query.append(String.join("\nUNION ALL\n", branches));
-        query.append("\n");
+        if (branches.isEmpty()) {
+            query.append("RETURN null AS type, null AS name, null AS description, null AS address, ");
+            query.append("null AS resourceAddress, null AS stability, false AS deprecated, null AS properties");
+            if (filter.hasSearchQuery()) {
+                query.append(", 0.0 AS score");
+            }
+            query.append(" LIMIT 0\n");
+        } else {
+            query.append(String.join("\nUNION ALL\n", branches));
+            query.append("\n");
+        }
     }
 
     // ------------------------------------------------------ result branches
@@ -1577,13 +1611,13 @@ public class CatalogRepository {
         if (filter.hasRestartFilter() && !"restartValues".equals(excludeParam)) {
             params.put("restartValues", filter.restartValues());
         }
-        if (filter.hasRequiredFilter()) {
+        if (filter.hasRequiredFilter() && !"required".equals(excludeParam)) {
             params.put("required", filter.required());
         }
-        if (filter.hasNillableFilter()) {
+        if (filter.hasNillableFilter() && !"nillable".equals(excludeParam)) {
             params.put("nillable", filter.nillable());
         }
-        if (filter.hasExpressionsFilter()) {
+        if (filter.hasExpressionsFilter() && !"expressions".equals(excludeParam)) {
             params.put("expressions", filter.expressions());
         }
         if (filter.hasUnitFilter() && !"units".equals(excludeParam)) {

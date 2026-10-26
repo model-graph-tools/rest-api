@@ -2,13 +2,16 @@ package org.wildfly.modelgraph.api;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public final class CatalogFilter {
 
     private static final int DEFAULT_LIMIT = 50;
+    private static final int MAX_LIMIT = 500;
     private static final int DEFAULT_OFFSET = 0;
     private static final String DEFAULT_SORT = "name";
     private static final String DEFAULT_ORDER = "asc";
+    private static final Set<String> VALID_TYPES = Set.of("resource", "attribute", "operation", "capability");
 
     private final String q;
     private final List<String> types;
@@ -92,7 +95,9 @@ public final class CatalogFilter {
             Boolean hasParams, Boolean hasReturnValue,
             String sort, String order, Integer limit, Integer offset) {
         String effectiveQ = (q != null && !q.isBlank()) ? q.strip() : null;
-        List<String> types = parseMultiValue(type);
+        List<String> types = parseMultiValue(type).stream()
+                .filter(VALID_TYPES::contains)
+                .toList();
         List<String> stabilities = parseMultiValue(stability);
         String effectiveDeprecated = parseDeprecated(deprecated);
         String effectiveScope = (scope != null && !scope.isBlank()) ? scope.strip() : null;
@@ -109,7 +114,7 @@ public final class CatalogFilter {
                 : null;
         String effectiveSort = parseSort(sort, effectiveQ);
         String effectiveOrder = parseOrder(order);
-        int effectiveLimit = (limit != null && limit > 0) ? limit : DEFAULT_LIMIT;
+        int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, MAX_LIMIT) : DEFAULT_LIMIT;
         int effectiveOffset = (offset != null && offset >= 0) ? offset : DEFAULT_OFFSET;
         return new CatalogFilter(effectiveQ, types, stabilities, effectiveDeprecated, effectiveScope,
                 singleton, effectiveDeclaresCap, definesAttrGroups,
@@ -353,6 +358,15 @@ public final class CatalogFilter {
                 || hasRestartFilter() || hasRequiredFilter() || hasNillableFilter()
                 || hasExpressionsFilter() || hasUnitFilter() || hasHasAllowedFilter()
                 || hasSensitiveFilter() || hasHasRelationshipsFilter() || hasRefsCapFilter();
+    }
+
+    public boolean hasAnyOperationFilter() {
+        return hasReadOnlyFilter() || hasRuntimeOnlyFilter() || hasGlobalFilter()
+                || hasParamsFilter() || hasReturnValueFilter();
+    }
+
+    public boolean hasAnyResourceFilter() {
+        return hasSingletonFilter() || hasDeclaresCapFilter() || hasDefinesAttrGroupsFilter();
     }
 
     public boolean hasReadOnlyFilter() {
