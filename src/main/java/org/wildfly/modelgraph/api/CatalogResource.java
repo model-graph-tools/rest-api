@@ -34,6 +34,11 @@ public class CatalogResource {
             @QueryParam("expressions") Boolean expressions,
             @QueryParam("unit") String unit,
             @QueryParam("hasAllowed") Boolean hasAllowed,
+            @QueryParam("readOnly") Boolean readOnly,
+            @QueryParam("runtimeOnly") Boolean runtimeOnly,
+            @QueryParam("global") Boolean global,
+            @QueryParam("hasParams") Boolean hasParams,
+            @QueryParam("hasReturnValue") Boolean hasReturnValue,
             @QueryParam("sort") String sort,
             @QueryParam("order") String order,
             @QueryParam("limit") Integer limit,
@@ -42,7 +47,9 @@ public class CatalogResource {
         CatalogFilter filter = CatalogFilter.of(q, type, stability, deprecated, scope,
                 singleton, declaresCap, definesAttrGroups,
                 dataType, accessType, storage, restart, required, nillable, expressions,
-                unit, hasAllowed, sort, order, limit, offset);
+                unit, hasAllowed,
+                readOnly, runtimeOnly, global, hasParams, hasReturnValue,
+                sort, order, limit, offset);
         var results = repository.search(filter);
         int total = repository.total(filter);
         var facets = repository.facetCounts(filter);

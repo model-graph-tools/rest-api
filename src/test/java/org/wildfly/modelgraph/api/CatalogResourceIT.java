@@ -26,7 +26,6 @@ class CatalogResourceIT {
                 .body("limit", is(50))
                 .body("offset", is(0));
 
-        // Verify all four types are present via facets
         var response = given()
                 .when().get("/api/catalog")
                 .then()
@@ -91,14 +90,12 @@ class CatalogResourceIT {
         List<String> types = response.getList("results.type");
         assertThat("Results should only contain resource or attribute",
                 types, everyItem(isOneOf("resource", "attribute")));
-        // Verify both types are present (if enough results)
         assertThat("Should contain resources", types, hasItem("resource"));
         assertThat("Should contain attributes", types, hasItem("attribute"));
     }
 
     @Test
     void paginationWithLimitAndOffset() {
-        // First page
         var firstPage = given()
                 .queryParam("limit", 5)
                 .queryParam("offset", 0)
@@ -110,7 +107,6 @@ class CatalogResourceIT {
                 .body("offset", is(0))
                 .extract().jsonPath();
 
-        // Second page
         var secondPage = given()
                 .queryParam("limit", 5)
                 .queryParam("offset", 5)
@@ -122,12 +118,10 @@ class CatalogResourceIT {
                 .body("offset", is(5))
                 .extract().jsonPath();
 
-        // Pages should have different results
         List<String> firstNames = firstPage.getList("results.name");
         List<String> secondNames = secondPage.getList("results.name");
         assertThat("Pages should have different results", firstNames, not(equalTo(secondNames)));
 
-        // Total should be consistent
         int firstTotal = firstPage.getInt("total");
         int secondTotal = secondPage.getInt("total");
         assertThat("Total should be consistent across pages", firstTotal, is(secondTotal));
@@ -286,7 +280,6 @@ class CatalogResourceIT {
             assertThat("Stability value should be lowercase: " + stability, stability, is(stability.toLowerCase()));
         }
 
-        // Check facet keys are lowercase too
         Map<String, Object> typeFacets = response.getMap("facets.type");
         for (String key : typeFacets.keySet()) {
             assertThat("Type facet key should be lowercase: " + key, key, is(key.toLowerCase()));
@@ -311,14 +304,12 @@ class CatalogResourceIT {
                 .extract().jsonPath();
 
         List<String> names = response.getList("results.name");
-        // At least some results should contain "pool" in the name
         assertThat("At least one result should contain 'pool'",
                 names.stream().anyMatch(n -> n.toLowerCase().contains("pool")), is(true));
     }
 
     @Test
     void searchWithQDefaultsSortToRelevance() {
-        // When q is provided without explicit sort, results should still return
         given()
                 .queryParam("q", "pool")
                 .when().get("/api/catalog")
@@ -410,7 +401,6 @@ class CatalogResourceIT {
                 .extract().jsonPath();
 
         List<String> addresses = response.getList("results.address");
-        // Filter out nulls for comparison
         List<String> nonNullAddresses = addresses.stream()
                 .filter(a -> a != null)
                 .toList();
@@ -422,7 +412,6 @@ class CatalogResourceIT {
 
     @Test
     void nullAddressesSortLastRegardlessOfDirection() {
-        // Include capabilities (which have null addresses) along with resources
         var responseAsc = given()
                 .queryParam("type", "resource,capability")
                 .queryParam("sort", "address")
@@ -434,7 +423,6 @@ class CatalogResourceIT {
                 .extract().jsonPath();
 
         List<String> addressesAsc = responseAsc.getList("results.address");
-        // Find first null — all subsequent should also be null
         boolean seenNull = false;
         for (String addr : addressesAsc) {
             if (addr == null) {
@@ -533,7 +521,6 @@ class CatalogResourceIT {
                 .statusCode(200)
                 .extract().jsonPath();
 
-        // If there are results, they should all be attributes
         List<String> types = response.getList("results.type");
         assertThat("All results should be attributes",
                 types, everyItem(is("attribute")));
@@ -550,7 +537,6 @@ class CatalogResourceIT {
                 .body("results", not(empty()))
                 .extract().jsonPath();
 
-        // First attribute result should have properties populated
         assertThat("properties should not be null", response.get("results[0].properties"), notNullValue());
         assertThat("dataType should be present", response.getString("results[0].properties.dataType"), notNullValue());
         assertThat("accessType should be present", response.getString("results[0].properties.accessType"),
@@ -597,5 +583,102 @@ class CatalogResourceIT {
         assertThat("facets should NOT contain nillable", facets, not(hasKey("nillable")));
         assertThat("facets should NOT contain expressions", facets, not(hasKey("expressions")));
         assertThat("facets should NOT contain hasAllowed", facets, not(hasKey("hasAllowed")));
+    }
+
+    // ------------------------------------------------------ operation facet tests
+
+    @Test
+    void readOnlyTrueReturnsOnlyReadOnlyOperations() {
+        var response = given()
+                .queryParam("type", "operation")
+                .queryParam("readOnly", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be operations", types, everyItem(is("operation")));
+
+        List<Boolean> readOnlyValues = response.getList("results.properties.readOnly");
+        assertThat("All operations should be read-only", readOnlyValues, everyItem(is(true)));
+    }
+
+    @Test
+    void globalTrueReturnsGlobalOperations() {
+        var response = given()
+                .queryParam("type", "operation")
+                .queryParam("global", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be operations", types, everyItem(is("operation")));
+
+        List<Boolean> globalValues = response.getList("results.properties.global");
+        assertThat("All operations should be global", globalValues, everyItem(is(true)));
+    }
+
+    @Test
+    void hasParamsTrueReturnsOperationsWithParameters() {
+        var response = given()
+                .queryParam("type", "operation")
+                .queryParam("hasParams", true)
+                .queryParam("limit", 20)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be operations", types, everyItem(is("operation")));
+
+        List<Boolean> hasParamsValues = response.getList("results.properties.hasParams");
+        assertThat("All operations should have parameters", hasParamsValues, everyItem(is(true)));
+    }
+
+    @Test
+    void operationResultsIncludeAllPropertyFields() {
+        var response = given()
+                .queryParam("type", "operation")
+                .queryParam("limit", 5)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        assertThat("properties should not be null",
+                response.get("results[0].properties"), notNullValue());
+        assertThat("readOnly should be a boolean",
+                response.get("results[0].properties.readOnly"), instanceOf(Boolean.class));
+        assertThat("runtimeOnly should be a boolean",
+                response.get("results[0].properties.runtimeOnly"), instanceOf(Boolean.class));
+        assertThat("global should be a boolean",
+                response.get("results[0].properties.global"), instanceOf(Boolean.class));
+        assertThat("hasParams should be a boolean",
+                response.get("results[0].properties.hasParams"), instanceOf(Boolean.class));
+        assertThat("hasReturnValue should be a boolean",
+                response.get("results[0].properties.hasReturnValue"), instanceOf(Boolean.class));
+    }
+
+    @Test
+    void operationFacetsOmittedWhenTypeIsResource() {
+        var response = given()
+                .queryParam("type", "resource")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> facets = response.getMap("facets");
+        assertThat("readOnly facet should be absent for resources", facets, not(hasKey("readOnly")));
+        assertThat("runtimeOnly facet should be absent for resources", facets, not(hasKey("runtimeOnly")));
+        assertThat("global facet should be absent for resources", facets, not(hasKey("global")));
+        assertThat("hasParams facet should be absent for resources", facets, not(hasKey("hasParams")));
+        assertThat("hasReturnValue facet should be absent for resources", facets, not(hasKey("hasReturnValue")));
     }
 }

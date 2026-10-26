@@ -331,4 +331,63 @@ class CatalogResourceTest {
                 .body("results", hasSize(1))
                 .body("results[0].properties.required", is(true));
     }
+
+    // ------------------------------------------------------ operation filter tests
+
+    @Test
+    void readOnlyBooleanFilterPassesThrough() {
+        List<CatalogResult> results = List.of(
+                new CatalogResult("operation", "read-resource", "Reads resource",
+                        "/subsystem=io/buffer-pool=*/read-resource",
+                        "/subsystem=io/buffer-pool=*", "default", false,
+                        new OperationProperties(true, false, true, false, true)));
+        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
+        facets.put("type", Map.of("operation", 5L));
+        facets.put("readOnly", Map.of("yes", 3L, "no", 2L));
+
+        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(5);
+        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+
+        given()
+                .queryParam("type", "operation")
+                .queryParam("readOnly", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", hasSize(1))
+                .body("results[0].type", is("operation"))
+                .body("results[0].properties.readOnly", is(true))
+                .body("results[0].properties.global", is(true))
+                .body("results[0].properties.hasReturnValue", is(true))
+                .body("facets.readOnly.yes", is(3));
+    }
+
+    @Test
+    void hasParamsBooleanFilterPassesThrough() {
+        List<CatalogResult> results = List.of(
+                new CatalogResult("operation", "add", "Adds resource",
+                        "/subsystem=io/buffer-pool=*/add",
+                        "/subsystem=io/buffer-pool=*", "default", false,
+                        new OperationProperties(false, false, false, true, false)));
+        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
+        facets.put("type", Map.of("operation", 3L));
+        facets.put("hasParams", Map.of("yes", 2L, "no", 1L));
+
+        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(3);
+        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+
+        given()
+                .queryParam("type", "operation")
+                .queryParam("hasParams", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", hasSize(1))
+                .body("results[0].type", is("operation"))
+                .body("results[0].properties.hasParams", is(true))
+                .body("results[0].properties.readOnly", is(false))
+                .body("facets.hasParams.yes", is(2));
+    }
 }

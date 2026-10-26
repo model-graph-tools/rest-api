@@ -9,7 +9,8 @@ public enum CatalogType {
             "dataType", "accessType", "storage", "restart",
             "required", "nillable", "expressions",
             "unit", "hasAllowed")),
-    OPERATION("operation", Set.of("type", "stability", "deprecated")),
+    OPERATION("operation", Set.of("type", "stability", "deprecated",
+            "readOnly", "runtimeOnly", "global", "hasParams", "hasReturnValue")),
     CAPABILITY("capability", Set.of("type", "stability", "deprecated"));
 
     private static final Set<String> COMMON_FACETS = Set.of("type", "stability", "deprecated");

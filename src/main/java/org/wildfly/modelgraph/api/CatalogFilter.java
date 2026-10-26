@@ -27,6 +27,11 @@ public final class CatalogFilter {
     private final Boolean expressions;
     private final List<String> units;
     private final Boolean hasAllowed;
+    private final Boolean readOnly;
+    private final Boolean runtimeOnly;
+    private final Boolean global;
+    private final Boolean hasParams;
+    private final Boolean hasReturnValue;
     private final String sort;
     private final String order;
     private final int limit;
@@ -38,6 +43,8 @@ public final class CatalogFilter {
             List<String> dataTypes, List<String> accessTypes, List<String> storageValues,
             List<String> restartValues, Boolean required, Boolean nillable, Boolean expressions,
             List<String> units, Boolean hasAllowed,
+            Boolean readOnly, Boolean runtimeOnly, Boolean global,
+            Boolean hasParams, Boolean hasReturnValue,
             String sort, String order, int limit, int offset) {
         this.q = q;
         this.types = types;
@@ -56,6 +63,11 @@ public final class CatalogFilter {
         this.expressions = expressions;
         this.units = units;
         this.hasAllowed = hasAllowed;
+        this.readOnly = readOnly;
+        this.runtimeOnly = runtimeOnly;
+        this.global = global;
+        this.hasParams = hasParams;
+        this.hasReturnValue = hasReturnValue;
         this.sort = sort;
         this.order = order;
         this.limit = limit;
@@ -68,6 +80,8 @@ public final class CatalogFilter {
             String dataType, String accessType, String storage, String restart,
             Boolean required, Boolean nillable, Boolean expressions,
             String unit, Boolean hasAllowed,
+            Boolean readOnly, Boolean runtimeOnly, Boolean global,
+            Boolean hasParams, Boolean hasReturnValue,
             String sort, String order, Integer limit, Integer offset) {
         String effectiveQ = (q != null && !q.isBlank()) ? q.strip() : null;
         List<String> types = parseMultiValue(type);
@@ -90,6 +104,7 @@ public final class CatalogFilter {
                 singleton, effectiveDeclaresCap, definesAttrGroups,
                 dataTypes, accessTypes, storageValues, restartValues, required, nillable,
                 expressions, units, hasAllowed,
+                readOnly, runtimeOnly, global, hasParams, hasReturnValue,
                 effectiveSort, effectiveOrder, effectiveLimit, effectiveOffset);
     }
 
@@ -159,6 +174,26 @@ public final class CatalogFilter {
 
     public Boolean hasAllowed() {
         return hasAllowed;
+    }
+
+    public Boolean readOnly() {
+        return readOnly;
+    }
+
+    public Boolean runtimeOnly() {
+        return runtimeOnly;
+    }
+
+    public Boolean global() {
+        return global;
+    }
+
+    public Boolean hasParams() {
+        return hasParams;
+    }
+
+    public Boolean hasReturnValue() {
+        return hasReturnValue;
     }
 
     public String sort() {
@@ -265,6 +300,26 @@ public final class CatalogFilter {
         return hasDataTypeFilter() || hasAccessTypeFilter() || hasStorageFilter()
                 || hasRestartFilter() || hasRequiredFilter() || hasNillableFilter()
                 || hasExpressionsFilter() || hasUnitFilter() || hasHasAllowedFilter();
+    }
+
+    public boolean hasReadOnlyFilter() {
+        return readOnly != null;
+    }
+
+    public boolean hasRuntimeOnlyFilter() {
+        return runtimeOnly != null;
+    }
+
+    public boolean hasGlobalFilter() {
+        return global != null;
+    }
+
+    public boolean hasParamsFilter() {
+        return hasParams != null;
+    }
+
+    public boolean hasReturnValueFilter() {
+        return hasReturnValue != null;
     }
 
     public boolean includesType(CatalogType catalogType) {
