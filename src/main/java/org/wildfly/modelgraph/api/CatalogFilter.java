@@ -1,0 +1,440 @@
+package org.wildfly.modelgraph.api;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+
+public final class CatalogFilter {
+
+    private static final int DEFAULT_LIMIT = 50;
+    private static final int MAX_LIMIT = 500;
+    private static final int DEFAULT_OFFSET = 0;
+    private static final String DEFAULT_SORT = "name";
+    private static final String DEFAULT_ORDER = "asc";
+    private static final Set<String> VALID_TYPES = Set.of("resource", "attribute", "operation", "capability");
+
+    private final String q;
+    private final List<String> types;
+    private final List<String> stabilities;
+    private final String deprecated;
+    private final String scope;
+    private final Boolean singleton;
+    private final String declaresCap;
+    private final Boolean definesAttrGroups;
+    private final List<String> dataTypes;
+    private final List<String> accessTypes;
+    private final List<String> storageValues;
+    private final List<String> restartValues;
+    private final Boolean required;
+    private final Boolean nillable;
+    private final Boolean expressions;
+    private final List<String> units;
+    private final Boolean hasAllowed;
+    private final Boolean sensitive;
+    private final Boolean hasRelationships;
+    private final String refsCap;
+    private final Boolean readOnly;
+    private final Boolean runtimeOnly;
+    private final Boolean global;
+    private final Boolean hasParams;
+    private final Boolean hasReturnValue;
+    private final String sort;
+    private final String order;
+    private final int limit;
+    private final int offset;
+
+    private CatalogFilter(String q, List<String> types, List<String> stabilities,
+            String deprecated, String scope,
+            Boolean singleton, String declaresCap, Boolean definesAttrGroups,
+            List<String> dataTypes, List<String> accessTypes, List<String> storageValues,
+            List<String> restartValues, Boolean required, Boolean nillable, Boolean expressions,
+            List<String> units, Boolean hasAllowed,
+            Boolean sensitive, Boolean hasRelationships, String refsCap,
+            Boolean readOnly, Boolean runtimeOnly, Boolean global,
+            Boolean hasParams, Boolean hasReturnValue,
+            String sort, String order, int limit, int offset) {
+        this.q = q;
+        this.types = types;
+        this.stabilities = stabilities;
+        this.deprecated = deprecated;
+        this.scope = scope;
+        this.singleton = singleton;
+        this.declaresCap = declaresCap;
+        this.definesAttrGroups = definesAttrGroups;
+        this.dataTypes = dataTypes;
+        this.accessTypes = accessTypes;
+        this.storageValues = storageValues;
+        this.restartValues = restartValues;
+        this.required = required;
+        this.nillable = nillable;
+        this.expressions = expressions;
+        this.units = units;
+        this.hasAllowed = hasAllowed;
+        this.sensitive = sensitive;
+        this.hasRelationships = hasRelationships;
+        this.refsCap = refsCap;
+        this.readOnly = readOnly;
+        this.runtimeOnly = runtimeOnly;
+        this.global = global;
+        this.hasParams = hasParams;
+        this.hasReturnValue = hasReturnValue;
+        this.sort = sort;
+        this.order = order;
+        this.limit = limit;
+        this.offset = offset;
+    }
+
+    public static CatalogFilter of(String q, String type, String stability, String deprecated,
+            String scope,
+            Boolean singleton, String declaresCap, Boolean definesAttrGroups,
+            String dataType, String accessType, String storage, String restart,
+            Boolean required, Boolean nillable, Boolean expressions,
+            String unit, Boolean hasAllowed,
+            Boolean sensitive, Boolean hasRelationships, String refsCap,
+            Boolean readOnly, Boolean runtimeOnly, Boolean global,
+            Boolean hasParams, Boolean hasReturnValue,
+            String sort, String order, Integer limit, Integer offset) {
+        String effectiveQ = (q != null && !q.isBlank()) ? q.strip() : null;
+        List<String> types = parseMultiValue(type).stream()
+                .filter(VALID_TYPES::contains)
+                .toList();
+        List<String> stabilities = parseMultiValue(stability);
+        String effectiveDeprecated = parseDeprecated(deprecated);
+        String effectiveScope = (scope != null && !scope.isBlank()) ? scope.strip() : null;
+        String effectiveDeclaresCap = (declaresCap != null && !declaresCap.isBlank())
+                ? declaresCap.strip().toLowerCase()
+                : null;
+        List<String> dataTypes = parseMultiValue(dataType);
+        List<String> accessTypes = parseMultiValue(accessType);
+        List<String> storageValues = parseMultiValue(storage);
+        List<String> restartValues = parseMultiValue(restart);
+        List<String> units = parseMultiValue(unit);
+        String effectiveRefsCap = (refsCap != null && !refsCap.isBlank())
+                ? refsCap.strip().toLowerCase()
+                : null;
+        String effectiveSort = parseSort(sort, effectiveQ);
+        String effectiveOrder = parseOrder(order);
+        int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, MAX_LIMIT) : DEFAULT_LIMIT;
+        int effectiveOffset = (offset != null && offset >= 0) ? offset : DEFAULT_OFFSET;
+        return new CatalogFilter(effectiveQ, types, stabilities, effectiveDeprecated, effectiveScope,
+                singleton, effectiveDeclaresCap, definesAttrGroups,
+                dataTypes, accessTypes, storageValues, restartValues, required, nillable,
+                expressions, units, hasAllowed,
+                sensitive, hasRelationships, effectiveRefsCap,
+                readOnly, runtimeOnly, global, hasParams, hasReturnValue,
+                effectiveSort, effectiveOrder, effectiveLimit, effectiveOffset);
+    }
+
+    public String q() {
+        return q;
+    }
+
+    public List<String> types() {
+        return types;
+    }
+
+    public List<String> stabilities() {
+        return stabilities;
+    }
+
+    public String deprecated() {
+        return deprecated;
+    }
+
+    public String scope() {
+        return scope;
+    }
+
+    public Boolean singleton() {
+        return singleton;
+    }
+
+    public String declaresCap() {
+        return declaresCap;
+    }
+
+    public Boolean definesAttrGroups() {
+        return definesAttrGroups;
+    }
+
+    public List<String> dataTypes() {
+        return dataTypes;
+    }
+
+    public List<String> accessTypes() {
+        return accessTypes;
+    }
+
+    public List<String> storageValues() {
+        return storageValues;
+    }
+
+    public List<String> restartValues() {
+        return restartValues;
+    }
+
+    public Boolean required() {
+        return required;
+    }
+
+    public Boolean nillable() {
+        return nillable;
+    }
+
+    public Boolean expressions() {
+        return expressions;
+    }
+
+    public List<String> units() {
+        return units;
+    }
+
+    public Boolean hasAllowed() {
+        return hasAllowed;
+    }
+
+    public Boolean sensitive() {
+        return sensitive;
+    }
+
+    public Boolean hasRelationships() {
+        return hasRelationships;
+    }
+
+    public String refsCap() {
+        return refsCap;
+    }
+
+    public Boolean readOnly() {
+        return readOnly;
+    }
+
+    public Boolean runtimeOnly() {
+        return runtimeOnly;
+    }
+
+    public Boolean global() {
+        return global;
+    }
+
+    public Boolean hasParams() {
+        return hasParams;
+    }
+
+    public Boolean hasReturnValue() {
+        return hasReturnValue;
+    }
+
+    public String sort() {
+        return sort;
+    }
+
+    public String order() {
+        return order;
+    }
+
+    public int limit() {
+        return limit;
+    }
+
+    public int offset() {
+        return offset;
+    }
+
+    public boolean hasSearchQuery() {
+        return q != null;
+    }
+
+    public boolean hasTypeFilter() {
+        return !types.isEmpty();
+    }
+
+    public boolean hasStabilityFilter() {
+        return !stabilities.isEmpty();
+    }
+
+    public boolean hasDeprecatedFilter() {
+        return deprecated != null;
+    }
+
+    public boolean hasScopeFilter() {
+        return scope != null;
+    }
+
+    public boolean hasSingletonFilter() {
+        return singleton != null;
+    }
+
+    public boolean hasDeclaresCapFilter() {
+        return declaresCap != null;
+    }
+
+    public boolean declaresCapIsYes() {
+        return "yes".equals(declaresCap);
+    }
+
+    public boolean declaresCapIsNo() {
+        return "no".equals(declaresCap);
+    }
+
+    public String declaresCapContains() {
+        if (declaresCap != null && declaresCap.startsWith("contains:")) {
+            String text = declaresCap.substring("contains:".length()).strip();
+            return text.isEmpty() ? null : text;
+        }
+        return null;
+    }
+
+    public boolean hasDefinesAttrGroupsFilter() {
+        return definesAttrGroups != null;
+    }
+
+    public boolean hasDataTypeFilter() {
+        return !dataTypes.isEmpty();
+    }
+
+    public boolean hasAccessTypeFilter() {
+        return !accessTypes.isEmpty();
+    }
+
+    public boolean hasStorageFilter() {
+        return !storageValues.isEmpty();
+    }
+
+    public boolean hasRestartFilter() {
+        return !restartValues.isEmpty();
+    }
+
+    public boolean hasRequiredFilter() {
+        return required != null;
+    }
+
+    public boolean hasNillableFilter() {
+        return nillable != null;
+    }
+
+    public boolean hasExpressionsFilter() {
+        return expressions != null;
+    }
+
+    public boolean hasUnitFilter() {
+        return !units.isEmpty();
+    }
+
+    public boolean hasHasAllowedFilter() {
+        return hasAllowed != null;
+    }
+
+    public boolean hasSensitiveFilter() {
+        return sensitive != null;
+    }
+
+    public boolean hasHasRelationshipsFilter() {
+        return hasRelationships != null;
+    }
+
+    public boolean hasRefsCapFilter() {
+        return refsCap != null;
+    }
+
+    public boolean refsCapIsYes() {
+        return "yes".equals(refsCap);
+    }
+
+    public boolean refsCapIsNo() {
+        return "no".equals(refsCap);
+    }
+
+    public String refsCapContains() {
+        if (refsCap != null && refsCap.startsWith("contains:")) {
+            String text = refsCap.substring("contains:".length()).strip();
+            return text.isEmpty() ? null : text;
+        }
+        return null;
+    }
+
+    public boolean hasAnyAttributeFilter() {
+        return hasDataTypeFilter() || hasAccessTypeFilter() || hasStorageFilter()
+                || hasRestartFilter() || hasRequiredFilter() || hasNillableFilter()
+                || hasExpressionsFilter() || hasUnitFilter() || hasHasAllowedFilter()
+                || hasSensitiveFilter() || hasHasRelationshipsFilter() || hasRefsCapFilter();
+    }
+
+    public boolean hasAnyOperationFilter() {
+        return hasReadOnlyFilter() || hasRuntimeOnlyFilter() || hasGlobalFilter()
+                || hasParamsFilter() || hasReturnValueFilter();
+    }
+
+    public boolean hasAnyResourceFilter() {
+        return hasSingletonFilter() || hasDeclaresCapFilter() || hasDefinesAttrGroupsFilter();
+    }
+
+    public boolean hasReadOnlyFilter() {
+        return readOnly != null;
+    }
+
+    public boolean hasRuntimeOnlyFilter() {
+        return runtimeOnly != null;
+    }
+
+    public boolean hasGlobalFilter() {
+        return global != null;
+    }
+
+    public boolean hasParamsFilter() {
+        return hasParams != null;
+    }
+
+    public boolean hasReturnValueFilter() {
+        return hasReturnValue != null;
+    }
+
+    public boolean includesType(CatalogType catalogType) {
+        return !hasTypeFilter() || types.contains(catalogType.label());
+    }
+
+    static List<String> parseMultiValue(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(value.split(","))
+                .map(String::strip)
+                .map(String::toLowerCase)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    private static String parseDeprecated(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String lower = value.strip().toLowerCase();
+        if ("yes".equals(lower) || "no".equals(lower)) {
+            return lower;
+        }
+        return null;
+    }
+
+    private static String parseSort(String sort, String q) {
+        if (sort != null && !sort.isBlank()) {
+            String lower = sort.strip().toLowerCase();
+            if (List.of("name", "type", "address", "stability").contains(lower)) {
+                return lower;
+            }
+        }
+        if (q != null) {
+            return "score";
+        }
+        return DEFAULT_SORT;
+    }
+
+    private static String parseOrder(String order) {
+        if (order != null && !order.isBlank()) {
+            String lower = order.strip().toLowerCase();
+            if ("desc".equals(lower)) {
+                return "desc";
+            }
+        }
+        return DEFAULT_ORDER;
+    }
+}
