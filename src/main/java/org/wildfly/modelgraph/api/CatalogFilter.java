@@ -15,19 +15,32 @@ public final class CatalogFilter {
     private final List<String> stabilities;
     private final String deprecated;
     private final String scope;
+    private final Boolean readOnly;
+    private final Boolean runtimeOnly;
+    private final Boolean global;
+    private final Boolean hasParams;
+    private final Boolean hasReturnValue;
     private final String sort;
     private final String order;
     private final int limit;
     private final int offset;
 
     private CatalogFilter(String q, List<String> types, List<String> stabilities,
-            String deprecated, String scope, String sort, String order,
+            String deprecated, String scope,
+            Boolean readOnly, Boolean runtimeOnly, Boolean global,
+            Boolean hasParams, Boolean hasReturnValue,
+            String sort, String order,
             int limit, int offset) {
         this.q = q;
         this.types = types;
         this.stabilities = stabilities;
         this.deprecated = deprecated;
         this.scope = scope;
+        this.readOnly = readOnly;
+        this.runtimeOnly = runtimeOnly;
+        this.global = global;
+        this.hasParams = hasParams;
+        this.hasReturnValue = hasReturnValue;
         this.sort = sort;
         this.order = order;
         this.limit = limit;
@@ -35,7 +48,10 @@ public final class CatalogFilter {
     }
 
     public static CatalogFilter of(String q, String type, String stability, String deprecated,
-            String scope, String sort, String order, Integer limit, Integer offset) {
+            String scope,
+            Boolean readOnly, Boolean runtimeOnly, Boolean global,
+            Boolean hasParams, Boolean hasReturnValue,
+            String sort, String order, Integer limit, Integer offset) {
         String effectiveQ = (q != null && !q.isBlank()) ? q.strip() : null;
         List<String> types = parseMultiValue(type);
         List<String> stabilities = parseMultiValue(stability);
@@ -46,7 +62,8 @@ public final class CatalogFilter {
         int effectiveLimit = (limit != null && limit > 0) ? limit : DEFAULT_LIMIT;
         int effectiveOffset = (offset != null && offset >= 0) ? offset : DEFAULT_OFFSET;
         return new CatalogFilter(effectiveQ, types, stabilities, effectiveDeprecated,
-                effectiveScope, effectiveSort, effectiveOrder, effectiveLimit, effectiveOffset);
+                effectiveScope, readOnly, runtimeOnly, global, hasParams, hasReturnValue,
+                effectiveSort, effectiveOrder, effectiveLimit, effectiveOffset);
     }
 
     public String q() {
@@ -67,6 +84,26 @@ public final class CatalogFilter {
 
     public String scope() {
         return scope;
+    }
+
+    public Boolean readOnly() {
+        return readOnly;
+    }
+
+    public Boolean runtimeOnly() {
+        return runtimeOnly;
+    }
+
+    public Boolean global() {
+        return global;
+    }
+
+    public Boolean hasParams() {
+        return hasParams;
+    }
+
+    public Boolean hasReturnValue() {
+        return hasReturnValue;
     }
 
     public String sort() {
@@ -103,6 +140,26 @@ public final class CatalogFilter {
 
     public boolean hasScopeFilter() {
         return scope != null;
+    }
+
+    public boolean hasReadOnlyFilter() {
+        return readOnly != null;
+    }
+
+    public boolean hasRuntimeOnlyFilter() {
+        return runtimeOnly != null;
+    }
+
+    public boolean hasGlobalFilter() {
+        return global != null;
+    }
+
+    public boolean hasParamsFilter() {
+        return hasParams != null;
+    }
+
+    public boolean hasReturnValueFilter() {
+        return hasReturnValue != null;
     }
 
     public boolean includesType(CatalogType catalogType) {

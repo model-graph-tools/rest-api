@@ -345,4 +345,102 @@ class CatalogResourceIT {
             }
         }
     }
+
+    // ------------------------------------------------------ operation facet tests
+
+    @Test
+    void readOnlyTrueReturnsOnlyReadOnlyOperations() {
+        var response = given()
+                .queryParam("type", "operation")
+                .queryParam("readOnly", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be operations", types, everyItem(is("operation")));
+
+        List<Boolean> readOnlyValues = response.getList("results.properties.readOnly");
+        assertThat("All operations should be read-only", readOnlyValues, everyItem(is(true)));
+    }
+
+    @Test
+    void globalTrueReturnsGlobalOperations() {
+        var response = given()
+                .queryParam("type", "operation")
+                .queryParam("global", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be operations", types, everyItem(is("operation")));
+
+        List<Boolean> globalValues = response.getList("results.properties.global");
+        assertThat("All operations should be global", globalValues, everyItem(is(true)));
+    }
+
+    @Test
+    void hasParamsTrueReturnsOperationsWithParameters() {
+        var response = given()
+                .queryParam("type", "operation")
+                .queryParam("hasParams", true)
+                .queryParam("limit", 20)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be operations", types, everyItem(is("operation")));
+
+        List<Boolean> hasParamsValues = response.getList("results.properties.hasParams");
+        assertThat("All operations should have parameters", hasParamsValues, everyItem(is(true)));
+    }
+
+    @Test
+    void operationResultsIncludeAllPropertyFields() {
+        var response = given()
+                .queryParam("type", "operation")
+                .queryParam("limit", 5)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        // Verify first operation result has all five boolean property fields
+        assertThat("properties should not be null",
+                response.get("results[0].properties"), notNullValue());
+        assertThat("readOnly should be a boolean",
+                response.get("results[0].properties.readOnly"), instanceOf(Boolean.class));
+        assertThat("runtimeOnly should be a boolean",
+                response.get("results[0].properties.runtimeOnly"), instanceOf(Boolean.class));
+        assertThat("global should be a boolean",
+                response.get("results[0].properties.global"), instanceOf(Boolean.class));
+        assertThat("hasParams should be a boolean",
+                response.get("results[0].properties.hasParams"), instanceOf(Boolean.class));
+        assertThat("hasReturnValue should be a boolean",
+                response.get("results[0].properties.hasReturnValue"), instanceOf(Boolean.class));
+    }
+
+    @Test
+    void operationFacetsOmittedWhenTypeIsResource() {
+        var response = given()
+                .queryParam("type", "resource")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> facets = response.getMap("facets");
+        assertThat("readOnly facet should be absent for resources", facets, not(hasKey("readOnly")));
+        assertThat("runtimeOnly facet should be absent for resources", facets, not(hasKey("runtimeOnly")));
+        assertThat("global facet should be absent for resources", facets, not(hasKey("global")));
+        assertThat("hasParams facet should be absent for resources", facets, not(hasKey("hasParams")));
+        assertThat("hasReturnValue facet should be absent for resources", facets, not(hasKey("hasReturnValue")));
+    }
 }
