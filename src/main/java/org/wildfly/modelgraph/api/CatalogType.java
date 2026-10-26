@@ -4,13 +4,15 @@ import java.util.Set;
 
 public enum CatalogType {
 
-    RESOURCE("resource", Set.of("type", "stability", "deprecated")),
+    RESOURCE("resource", Set.of("type", "stability", "deprecated", "singleton", "declaresCap", "definesAttrGroups")),
     ATTRIBUTE("attribute", Set.of("type", "stability", "deprecated",
             "dataType", "accessType", "storage", "restart",
             "required", "nillable", "expressions",
             "unit", "hasAllowed")),
     OPERATION("operation", Set.of("type", "stability", "deprecated")),
     CAPABILITY("capability", Set.of("type", "stability", "deprecated"));
+
+    private static final Set<String> COMMON_FACETS = Set.of("type", "stability", "deprecated");
 
     private final String label;
     private final Set<String> applicableFacets;
@@ -26,6 +28,10 @@ public enum CatalogType {
 
     public Set<String> applicableFacets() {
         return applicableFacets;
+    }
+
+    public static Set<String> commonFacets() {
+        return COMMON_FACETS;
     }
 
     public static CatalogType fromLabel(String label) {

@@ -15,6 +15,9 @@ public final class CatalogFilter {
     private final List<String> stabilities;
     private final String deprecated;
     private final String scope;
+    private final Boolean singleton;
+    private final String declaresCap;
+    private final Boolean definesAttrGroups;
     private final List<String> dataTypes;
     private final List<String> accessTypes;
     private final List<String> storageValues;
@@ -31,6 +34,7 @@ public final class CatalogFilter {
 
     private CatalogFilter(String q, List<String> types, List<String> stabilities,
             String deprecated, String scope,
+            Boolean singleton, String declaresCap, Boolean definesAttrGroups,
             List<String> dataTypes, List<String> accessTypes, List<String> storageValues,
             List<String> restartValues, Boolean required, Boolean nillable, Boolean expressions,
             List<String> units, Boolean hasAllowed,
@@ -40,6 +44,9 @@ public final class CatalogFilter {
         this.stabilities = stabilities;
         this.deprecated = deprecated;
         this.scope = scope;
+        this.singleton = singleton;
+        this.declaresCap = declaresCap;
+        this.definesAttrGroups = definesAttrGroups;
         this.dataTypes = dataTypes;
         this.accessTypes = accessTypes;
         this.storageValues = storageValues;
@@ -57,6 +64,7 @@ public final class CatalogFilter {
 
     public static CatalogFilter of(String q, String type, String stability, String deprecated,
             String scope,
+            Boolean singleton, String declaresCap, Boolean definesAttrGroups,
             String dataType, String accessType, String storage, String restart,
             Boolean required, Boolean nillable, Boolean expressions,
             String unit, Boolean hasAllowed,
@@ -66,6 +74,9 @@ public final class CatalogFilter {
         List<String> stabilities = parseMultiValue(stability);
         String effectiveDeprecated = parseDeprecated(deprecated);
         String effectiveScope = (scope != null && !scope.isBlank()) ? scope.strip() : null;
+        String effectiveDeclaresCap = (declaresCap != null && !declaresCap.isBlank())
+                ? declaresCap.strip().toLowerCase()
+                : null;
         List<String> dataTypes = parseMultiValue(dataType);
         List<String> accessTypes = parseMultiValue(accessType);
         List<String> storageValues = parseMultiValue(storage);
@@ -76,6 +87,7 @@ public final class CatalogFilter {
         int effectiveLimit = (limit != null && limit > 0) ? limit : DEFAULT_LIMIT;
         int effectiveOffset = (offset != null && offset >= 0) ? offset : DEFAULT_OFFSET;
         return new CatalogFilter(effectiveQ, types, stabilities, effectiveDeprecated, effectiveScope,
+                singleton, effectiveDeclaresCap, definesAttrGroups,
                 dataTypes, accessTypes, storageValues, restartValues, required, nillable,
                 expressions, units, hasAllowed,
                 effectiveSort, effectiveOrder, effectiveLimit, effectiveOffset);
@@ -99,6 +111,18 @@ public final class CatalogFilter {
 
     public String scope() {
         return scope;
+    }
+
+    public Boolean singleton() {
+        return singleton;
+    }
+
+    public String declaresCap() {
+        return declaresCap;
+    }
+
+    public Boolean definesAttrGroups() {
+        return definesAttrGroups;
     }
 
     public List<String> dataTypes() {
@@ -171,6 +195,34 @@ public final class CatalogFilter {
 
     public boolean hasScopeFilter() {
         return scope != null;
+    }
+
+    public boolean hasSingletonFilter() {
+        return singleton != null;
+    }
+
+    public boolean hasDeclaresCapFilter() {
+        return declaresCap != null;
+    }
+
+    public boolean declaresCapIsYes() {
+        return "yes".equals(declaresCap);
+    }
+
+    public boolean declaresCapIsNo() {
+        return "no".equals(declaresCap);
+    }
+
+    public String declaresCapContains() {
+        if (declaresCap != null && declaresCap.startsWith("contains:")) {
+            String text = declaresCap.substring("contains:".length()).strip();
+            return text.isEmpty() ? null : text;
+        }
+        return null;
+    }
+
+    public boolean hasDefinesAttrGroupsFilter() {
+        return definesAttrGroups != null;
     }
 
     public boolean hasDataTypeFilter() {
@@ -248,7 +300,6 @@ public final class CatalogFilter {
                 return lower;
             }
         }
-        // When q is present and no explicit sort, default to score (relevance)
         if (q != null) {
             return "score";
         }
