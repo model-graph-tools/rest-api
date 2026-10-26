@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix native image crash caused by Neo4j Java driver 6.3.0 re-introduced via dependabot (driver pinned back to 6.2.1 until quarkus-neo4j handles the bolt codec SPI in native image)
+
 ## [0.3.0] - 2026-10-26
 
 ### Added
