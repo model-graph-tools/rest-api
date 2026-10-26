@@ -17,8 +17,11 @@ public class CatalogResource {
 
     @GET
     public Response catalog(
+            @QueryParam("q") String q,
             @QueryParam("type") String type,
             @QueryParam("stability") String stability,
+            @QueryParam("deprecated") String deprecated,
+            @QueryParam("scope") String scope,
             @QueryParam("dataType") String dataType,
             @QueryParam("accessType") String accessType,
             @QueryParam("storage") String storage,
@@ -28,11 +31,14 @@ public class CatalogResource {
             @QueryParam("expressions") Boolean expressions,
             @QueryParam("unit") String unit,
             @QueryParam("hasAllowed") Boolean hasAllowed,
+            @QueryParam("sort") String sort,
+            @QueryParam("order") String order,
             @QueryParam("limit") Integer limit,
             @QueryParam("offset") Integer offset) {
 
-        CatalogFilter filter = CatalogFilter.of(type, stability, dataType, accessType, storage,
-                restart, required, nillable, expressions, unit, hasAllowed, limit, offset);
+        CatalogFilter filter = CatalogFilter.of(q, type, stability, deprecated, scope,
+                dataType, accessType, storage, restart, required, nillable, expressions,
+                unit, hasAllowed, sort, order, limit, offset);
         var results = repository.search(filter);
         int total = repository.total(filter);
         var facets = repository.facetCounts(filter);

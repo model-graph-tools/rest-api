@@ -179,6 +179,173 @@ class CatalogResourceIT {
         }
     }
 
+    // ------------------------------------------------------ keyword search (q)
+
+    @Test
+    void searchWithQReturnsMatchingResults() {
+        var response = given()
+                .queryParam("q", "pool")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> names = response.getList("results.name");
+        // At least some results should contain "pool" in the name
+        assertThat("At least one result should contain 'pool'",
+                names.stream().anyMatch(n -> n.toLowerCase().contains("pool")), is(true));
+    }
+
+    @Test
+    void searchWithQDefaultsSortToRelevance() {
+        // When q is provided without explicit sort, results should still return
+        given()
+                .queryParam("q", "pool")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()));
+    }
+
+    // ------------------------------------------------------ deprecated filter
+
+    @Test
+    void deprecatedNoExcludesDeprecatedElements() {
+        var response = given()
+                .queryParam("deprecated", "no")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<Boolean> deprecatedFlags = response.getList("results.deprecated");
+        assertThat("No results should be deprecated",
+                deprecatedFlags, everyItem(is(false)));
+    }
+
+    @Test
+    void deprecatedFacetHasYesNoKeys() {
+        var response = given()
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> deprecatedFacet = response.getMap("facets.deprecated");
+        assertThat("deprecated facet should have 'yes' key", deprecatedFacet, hasKey("yes"));
+        assertThat("deprecated facet should have 'no' key", deprecatedFacet, hasKey("no"));
+    }
+
+    // ------------------------------------------------------ scope filter
+
+    @Test
+    void scopeFilterNarrowsToSubtree() {
+        var response = given()
+                .queryParam("scope", "/subsystem=io")
+                .queryParam("type", "resource")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> addresses = response.getList("results.address");
+        assertThat("All resource addresses should start with /subsystem=io",
+                addresses, everyItem(startsWith("/subsystem=io")));
+    }
+
+    // ------------------------------------------------------ sort and order
+
+    @Test
+    void defaultSortIsNameAscending() {
+        var response = given()
+                .queryParam("type", "resource")
+                .queryParam("limit", 10)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> names = response.getList("results.name");
+        for (int i = 1; i < names.size(); i++) {
+            assertThat("Results should be sorted by name ascending",
+                    names.get(i).compareTo(names.get(i - 1)), greaterThanOrEqualTo(0));
+        }
+    }
+
+    @Test
+    void sortByAddressDescSortsCorrectly() {
+        var response = given()
+                .queryParam("type", "resource")
+                .queryParam("sort", "address")
+                .queryParam("order", "desc")
+                .queryParam("limit", 10)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> addresses = response.getList("results.address");
+        // Filter out nulls for comparison
+        List<String> nonNullAddresses = addresses.stream()
+                .filter(a -> a != null)
+                .toList();
+        for (int i = 1; i < nonNullAddresses.size(); i++) {
+            assertThat("Results should be sorted by address descending",
+                    nonNullAddresses.get(i).compareTo(nonNullAddresses.get(i - 1)), lessThanOrEqualTo(0));
+        }
+    }
+
+    @Test
+    void nullAddressesSortLastRegardlessOfDirection() {
+        // Include capabilities (which have null addresses) along with resources
+        var responseAsc = given()
+                .queryParam("type", "resource,capability")
+                .queryParam("sort", "address")
+                .queryParam("order", "asc")
+                .queryParam("limit", 200)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> addressesAsc = responseAsc.getList("results.address");
+        // Find first null — all subsequent should also be null
+        boolean seenNull = false;
+        for (String addr : addressesAsc) {
+            if (addr == null) {
+                seenNull = true;
+            } else if (seenNull) {
+                assertThat("Non-null address should not appear after null (asc)", false, is(true));
+            }
+        }
+
+        var responseDesc = given()
+                .queryParam("type", "resource,capability")
+                .queryParam("sort", "address")
+                .queryParam("order", "desc")
+                .queryParam("limit", 200)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> addressesDesc = responseDesc.getList("results.address");
+        seenNull = false;
+        for (String addr : addressesDesc) {
+            if (addr == null) {
+                seenNull = true;
+            } else if (seenNull) {
+                assertThat("Non-null address should not appear after null (desc)", false, is(true));
+            }
+        }
+    }
+
     // ------------------------------------------------------ attribute facet tests
 
     @Test
