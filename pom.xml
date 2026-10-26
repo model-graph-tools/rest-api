@@ -47,7 +47,7 @@
 
     <properties>
         <!-- Dependency versions -->
-        <neo4j-java-driver.version>6.3.0</neo4j-java-driver.version>
+        <neo4j-java-driver.version>6.2.1</neo4j-java-driver.version>
         <neo4j-quarkus.version>6.8.1</neo4j-quarkus.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
@@ -61,7 +61,7 @@
 
         <!-- Build related -->
         <maven.compiler.release>25</maven.compiler.release>
-        <mgt.image>quay.io/modelgraphtools/model:41.0.1</mgt.image>
+        <mgt.image>quay.io/modelgraphtools/model:42.0.0</mgt.image>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <skipITs>true</skipITs>

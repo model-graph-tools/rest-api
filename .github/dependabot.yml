@@ -4,6 +4,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "org.neo4j.driver:neo4j-java-driver"
+        versions: [">= 6.3.0"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
