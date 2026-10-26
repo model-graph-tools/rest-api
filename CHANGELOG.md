@@ -8,9 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add `GET /api/catalog` endpoint — faceted search across resources, attributes, operations, and capabilities with paginated results and facet counts
+- Support 30+ filter dimensions: type, stability, deprecated, scope, keyword search, sort/order, and type-specific facets for resources (singleton, declaresCap, definesAttrGroups), attributes (dataType, accessType, storage, restart, required, nillable, expressions, sensitive, hasAllowed, unit, hasRelationships, refsCap), and operations (readOnly, runtimeOnly, global, hasParams, hasReturnValue)
+- Add sealed `Properties` interface with `ResourceProperties`, `AttributeProperties`, and `OperationProperties` subtypes for type-specific result fields
+- Add `singleton` field to `/api/search` results indicating wildcard vs singleton resource status
+- Add OpenAPI annotations to catalog endpoint documenting all query parameters
 - Include stability level in search results and capability references
-- Add `stability` field to `/api/search` response for resources, attributes, operations, and capabilities
-- Add `attributeStability` and `resourceStability` fields to `/api/capability/{name}/references` response
+- Add glossary (`GLOSSARY.md`) and API contract (`docs/catalog-api-contract.md`)
+- Add ADR 0001: drop `deprecated=since:<version>` filter in favor of simple yes/no
+
+### Changed
+- **BREAKING:** Change `/api/search` type values from PascalCase to lowercase (`Resource` → `resource`, `Attribute` → `attribute`, `Operation` → `operation`, `Capability` → `capability`)
+- Update default MGT test image to WildFly 42
+- Bump `quarkus-neo4j` from 6.8.0 to 6.8.1
+
+### Fixed
+- Enforce cross-type AND semantics in catalog (e.g., `type=operation&dataType=string` correctly returns zero results)
+- Strip invalid type parameter values instead of returning 500 errors
+- Cap catalog page size at 500 to prevent unbounded result sets
 
 ## [0.2.9] - 2026-10-12
 
