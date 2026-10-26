@@ -178,4 +178,138 @@ class CatalogResourceIT {
             assertThat("Stability facet key should be lowercase: " + key, key, is(key.toLowerCase()));
         }
     }
+
+    // ------------------------------------------------------ attribute facet tests
+
+    @Test
+    void dataTypeMultiValueFilterReturnsMatchingAttributes() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("dataType", "string,boolean")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> dataTypes = response.getList("results.properties.dataType");
+        assertThat("All results should have dataType string or boolean",
+                dataTypes, everyItem(isOneOf("string", "boolean")));
+    }
+
+    @Test
+    void accessTypeAndStorageCombinedFilter() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("accessType", "read-write")
+                .queryParam("storage", "configuration")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> accessTypes = response.getList("results.properties.accessType");
+        List<String> storageValues = response.getList("results.properties.storage");
+        assertThat("All results should have accessType read-write",
+                accessTypes, everyItem(is("read-write")));
+        assertThat("All results should have storage configuration",
+                storageValues, everyItem(is("configuration")));
+    }
+
+    @Test
+    void requiredTrueFilterReturnsOnlyRequiredAttributes() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("required", true)
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<Boolean> requiredValues = response.getList("results.properties.required");
+        assertThat("All results should have required=true",
+                requiredValues, everyItem(is(true)));
+    }
+
+    @Test
+    void hasAllowedTrueFilterReturnsAttributesWithAllowedValues() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("hasAllowed", true)
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        // If there are results, they should all be attributes
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be attributes",
+                types, everyItem(is("attribute")));
+    }
+
+    @Test
+    void attributeResultsIncludePropertiesWithScalarFields() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("limit", 10)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        // First attribute result should have properties populated
+        assertThat("properties should not be null", response.get("results[0].properties"), notNullValue());
+        assertThat("dataType should be present", response.getString("results[0].properties.dataType"), notNullValue());
+        assertThat("accessType should be present", response.getString("results[0].properties.accessType"),
+                notNullValue());
+        assertThat("storage should be present", response.getString("results[0].properties.storage"), notNullValue());
+    }
+
+    @Test
+    void facetCountsPresentForAttributeSpecificFacets() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> facets = response.getMap("facets");
+        assertThat("facets should contain dataType", facets, hasKey("dataType"));
+        assertThat("facets should contain accessType", facets, hasKey("accessType"));
+        assertThat("facets should contain storage", facets, hasKey("storage"));
+        assertThat("facets should contain restart", facets, hasKey("restart"));
+        assertThat("facets should contain required", facets, hasKey("required"));
+        assertThat("facets should contain nillable", facets, hasKey("nillable"));
+        assertThat("facets should contain expressions", facets, hasKey("expressions"));
+        assertThat("facets should contain hasAllowed", facets, hasKey("hasAllowed"));
+    }
+
+    @Test
+    void attributeFacetsOmittedWhenTypeIsResource() {
+        var response = given()
+                .queryParam("type", "resource")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> facets = response.getMap("facets");
+        assertThat("facets should contain type", facets, hasKey("type"));
+        assertThat("facets should contain stability", facets, hasKey("stability"));
+        assertThat("facets should NOT contain dataType", facets, not(hasKey("dataType")));
+        assertThat("facets should NOT contain accessType", facets, not(hasKey("accessType")));
+        assertThat("facets should NOT contain storage", facets, not(hasKey("storage")));
+        assertThat("facets should NOT contain required", facets, not(hasKey("required")));
+        assertThat("facets should NOT contain nillable", facets, not(hasKey("nillable")));
+        assertThat("facets should NOT contain expressions", facets, not(hasKey("expressions")));
+        assertThat("facets should NOT contain hasAllowed", facets, not(hasKey("hasAllowed")));
+    }
 }

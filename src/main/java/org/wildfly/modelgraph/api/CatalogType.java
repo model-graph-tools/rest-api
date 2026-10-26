@@ -4,17 +4,20 @@ import java.util.Set;
 
 public enum CatalogType {
 
-    RESOURCE("resource"),
-    ATTRIBUTE("attribute"),
-    OPERATION("operation"),
-    CAPABILITY("capability");
-
-    private static final Set<String> ALL_FACETS = Set.of("type", "stability");
+    RESOURCE("resource", Set.of("type", "stability")),
+    ATTRIBUTE("attribute", Set.of("type", "stability",
+            "dataType", "accessType", "storage", "restart",
+            "required", "nillable", "expressions",
+            "unit", "hasAllowed")),
+    OPERATION("operation", Set.of("type", "stability")),
+    CAPABILITY("capability", Set.of("type", "stability"));
 
     private final String label;
+    private final Set<String> applicableFacets;
 
-    CatalogType(String label) {
+    CatalogType(String label, Set<String> applicableFacets) {
         this.label = label;
+        this.applicableFacets = applicableFacets;
     }
 
     public String label() {
@@ -22,7 +25,7 @@ public enum CatalogType {
     }
 
     public Set<String> applicableFacets() {
-        return ALL_FACETS;
+        return applicableFacets;
     }
 
     public static CatalogType fromLabel(String label) {

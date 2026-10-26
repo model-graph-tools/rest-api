@@ -19,10 +19,20 @@ public class CatalogResource {
     public Response catalog(
             @QueryParam("type") String type,
             @QueryParam("stability") String stability,
+            @QueryParam("dataType") String dataType,
+            @QueryParam("accessType") String accessType,
+            @QueryParam("storage") String storage,
+            @QueryParam("restart") String restart,
+            @QueryParam("required") Boolean required,
+            @QueryParam("nillable") Boolean nillable,
+            @QueryParam("expressions") Boolean expressions,
+            @QueryParam("unit") String unit,
+            @QueryParam("hasAllowed") Boolean hasAllowed,
             @QueryParam("limit") Integer limit,
             @QueryParam("offset") Integer offset) {
 
-        CatalogFilter filter = CatalogFilter.of(type, stability, limit, offset);
+        CatalogFilter filter = CatalogFilter.of(type, stability, dataType, accessType, storage,
+                restart, required, nillable, expressions, unit, hasAllowed, limit, offset);
         var results = repository.search(filter);
         int total = repository.total(filter);
         var facets = repository.facetCounts(filter);

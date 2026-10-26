@@ -25,7 +25,9 @@ class CatalogResourceTest {
                 new CatalogResult("resource", "buffer-pool", "A buffer pool", "/subsystem=io/buffer-pool=*",
                         null, "default", false, null),
                 new CatalogResult("attribute", "enabled", "Whether enabled", "/subsystem=io/buffer-pool=*/enabled",
-                        "/subsystem=io/buffer-pool=*", "default", false, null));
+                        "/subsystem=io/buffer-pool=*", "default", false,
+                        new AttributeProperties("boolean", "read-write", "configuration", "all-services",
+                                false, true, true, false, null)));
         Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
         facets.put("type", Map.of("resource", 10L, "attribute", 20L, "operation", 5L, "capability", 3L));
         facets.put("stability", Map.of("default", 30L, "community", 5L, "preview", 3L));
@@ -42,6 +44,8 @@ class CatalogResourceTest {
                 .body("results[0].type", is("resource"))
                 .body("results[0].name", is("buffer-pool"))
                 .body("results[1].type", is("attribute"))
+                .body("results[1].properties.dataType", is("boolean"))
+                .body("results[1].properties.accessType", is("read-write"))
                 .body("facets.type.resource", is(10))
                 .body("facets.stability.default", is(30))
                 .body("total", is(38))
@@ -99,5 +103,58 @@ class CatalogResourceTest {
                 .statusCode(200)
                 .body("limit", is(25))
                 .body("offset", is(100));
+    }
+
+    @Test
+    void dataTypeMultiValueFilterPassesThrough() {
+        List<CatalogResult> results = List.of(
+                new CatalogResult("attribute", "max-threads", "Maximum threads", "/subsystem=io/worker=*/max-threads",
+                        "/subsystem=io/worker=*", "default", false,
+                        new AttributeProperties("int", "read-write", "configuration", "all-services",
+                                false, false, true, false, null)),
+                new CatalogResult("attribute", "enabled", "Whether enabled", "/subsystem=io/buffer-pool=*/enabled",
+                        "/subsystem=io/buffer-pool=*", "default", false,
+                        new AttributeProperties("boolean", "read-write", "configuration", "all-services",
+                                false, true, true, false, null)));
+        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
+        facets.put("type", Map.of("attribute", 2L));
+        facets.put("dataType", Map.of("int", 1L, "boolean", 1L));
+
+        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(2);
+        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+
+        given()
+                .queryParam("dataType", "int,boolean")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", hasSize(2))
+                .body("results[0].properties.dataType", is("int"))
+                .body("results[1].properties.dataType", is("boolean"));
+    }
+
+    @Test
+    void requiredBooleanFilterPassesThrough() {
+        List<CatalogResult> results = List.of(
+                new CatalogResult("attribute", "name", "The name", "/subsystem=datasources/data-source=*/name",
+                        "/subsystem=datasources/data-source=*", "default", false,
+                        new AttributeProperties("string", "read-write", "configuration", "all-services",
+                                true, false, true, false, null)));
+        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
+        facets.put("type", Map.of("attribute", 1L));
+        facets.put("required", Map.of("yes", 1L, "no", 0L));
+
+        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(1);
+        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+
+        given()
+                .queryParam("required", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", hasSize(1))
+                .body("results[0].properties.required", is(true));
     }
 }
