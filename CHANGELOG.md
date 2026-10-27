@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-10-27
+
 ### Fixed
 - Fix catalog API to always include zero-count values in facet count maps for type, stability, dataType, accessType, storage, restart, and boolean attribute facets, preventing client-side undefined key errors
 
@@ -136,7 +138,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release script and CI workflows (verify + release)
 - Multi-arch native image builds (amd64 + arm64)
 
-[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/model-graph-tools/rest-api/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/model-graph-tools/rest-api/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/model-graph-tools/rest-api/compare/v0.2.9...v0.3.0
 [0.2.9]: https://github.com/model-graph-tools/rest-api/compare/v0.2.8...v0.2.9
