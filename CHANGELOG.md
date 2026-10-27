@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix deprecated facet always returning zero by using `DEPRECATED_SINCE` relationship instead of non-existent `deprecated` node property
+
+### Added
+- Add integration test verifying deprecated facet counts are non-zero
+
 ## [0.3.2] - 2026-10-27
 
 ### Fixed

@@ -348,6 +348,21 @@ class CatalogResourceIT {
         assertThat("deprecated facet should have 'no' key", deprecatedFacet, hasKey("no"));
     }
 
+    @Test
+    void deprecatedFacetCountsDeprecatedElements() {
+        var response = given()
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        int yesCount = response.getInt("facets.deprecated.yes");
+        int noCount = response.getInt("facets.deprecated.no");
+        assertThat("deprecated 'yes' count should be > 0", yesCount, greaterThan(0));
+        assertThat("deprecated 'no' count should be > 0", noCount, greaterThan(0));
+        assertThat("deprecated counts should sum to total", yesCount + noCount, is(response.getInt("total")));
+    }
+
     // ------------------------------------------------------ scope filter
 
     @Test

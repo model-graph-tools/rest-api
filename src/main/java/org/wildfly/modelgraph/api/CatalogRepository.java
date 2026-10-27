@@ -454,7 +454,7 @@ public class CatalogRepository {
             appendDefinesAttrGroupsWhere(sb, "node", filter);
             sb.append("\nRETURN 'resource' AS type, node.name AS name, node.description AS description, ");
             sb.append("node.address AS address, null AS resourceAddress, toLower(node.stability) AS stability, ");
-            sb.append("coalesce(node.deprecated, false) AS deprecated, null AS properties, ");
+            sb.append("EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties, ");
             sb.append("coalesce(node.singleton, false) AS singleton, ");
             sb.append("EXISTS { (node)-[:DECLARES_CAPABILITY]->() } AS declaresCap, ");
             sb.append("EXISTS { (node)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } AS definesAttrGroups");
@@ -472,7 +472,7 @@ public class CatalogRepository {
             appendDefinesAttrGroupsWhere(sb, "r", filter);
             sb.append("\nRETURN 'resource' AS type, r.name AS name, r.description AS description, ");
             sb.append("r.address AS address, null AS resourceAddress, toLower(r.stability) AS stability, ");
-            sb.append("coalesce(r.deprecated, false) AS deprecated, null AS properties, ");
+            sb.append("EXISTS { (r)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties, ");
             sb.append("coalesce(r.singleton, false) AS singleton, ");
             sb.append("EXISTS { (r)-[:DECLARES_CAPABILITY]->() } AS declaresCap, ");
             sb.append("EXISTS { (r)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } AS definesAttrGroups");
@@ -495,7 +495,7 @@ public class CatalogRepository {
             appendAttributeFilters(sb, filter, "node");
             sb.append("\nRETURN 'attribute' AS type, node.name AS name, node.description AS description, ");
             sb.append("r.address + '/' + node.name AS address, r.address AS resourceAddress, toLower(node.stability) AS stability, ");
-            sb.append("coalesce(node.deprecated, false) AS deprecated, ");
+            sb.append("EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated, ");
             sb.append("{dataType: CASE WHEN EXISTS { (node)-[:CONSISTS_OF]->() } THEN 'complex' ELSE toLower(node.type) END, accessType: toLower(node.`access-type`), ");
             sb.append("storage: toLower(node.storage), restart: toLower(node.`restart-required`), ");
             sb.append("required: coalesce(node.required, false), nillable: coalesce(node.nillable, false), ");
@@ -517,7 +517,7 @@ public class CatalogRepository {
             appendAttributeFilters(sb, filter, "a");
             sb.append("\nRETURN 'attribute' AS type, a.name AS name, a.description AS description, ");
             sb.append("r.address + '/' + a.name AS address, r.address AS resourceAddress, toLower(a.stability) AS stability, ");
-            sb.append("coalesce(a.deprecated, false) AS deprecated, ");
+            sb.append("EXISTS { (a)-[:DEPRECATED_SINCE]->() } AS deprecated, ");
             sb.append("{dataType: CASE WHEN EXISTS { (a)-[:CONSISTS_OF]->() } THEN 'complex' ELSE toLower(a.type) END, accessType: toLower(a.`access-type`), ");
             sb.append("storage: toLower(a.storage), restart: toLower(a.`restart-required`), ");
             sb.append("required: coalesce(a.required, false), nillable: coalesce(a.nillable, false), ");
@@ -545,7 +545,7 @@ public class CatalogRepository {
             appendOperationFilters(sb, "node", filter);
             sb.append("\nRETURN 'operation' AS type, node.name AS name, node.description AS description, ");
             sb.append("r.address + '/' + node.name AS address, r.address AS resourceAddress, toLower(node.stability) AS stability, ");
-            sb.append("coalesce(node.deprecated, false) AS deprecated, null AS properties");
+            sb.append("EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties");
             if (includesResource) {
                 sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
             }
@@ -559,7 +559,7 @@ public class CatalogRepository {
             appendOperationFilters(sb, "o", filter);
             sb.append("\nRETURN 'operation' AS type, o.name AS name, o.description AS description, ");
             sb.append("r.address + '/' + o.name AS address, r.address AS resourceAddress, toLower(o.stability) AS stability, ");
-            sb.append("coalesce(o.deprecated, false) AS deprecated, null AS properties");
+            sb.append("EXISTS { (o)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties");
             if (includesResource) {
                 sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
             }
@@ -639,7 +639,11 @@ public class CatalogRepository {
     private void appendDeprecatedWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
         if (filter.hasDeprecatedFilter()) {
             boolean wantDeprecated = "yes".equals(filter.deprecated());
-            sb.append(" AND coalesce(").append(nodeVar).append(".deprecated, false) = ").append(wantDeprecated);
+            if (wantDeprecated) {
+                sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:DEPRECATED_SINCE]->() }");
+            } else {
+                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:DEPRECATED_SINCE]->() }");
+            }
         }
     }
 
@@ -1119,7 +1123,7 @@ public class CatalogRepository {
             appendSingletonWhere(sb, "node", filter);
             appendDeclaresCapWhere(sb, "node", filter);
             appendDefinesAttrGroupsWhere(sb, "node", filter);
-            sb.append("\nRETURN coalesce(node.deprecated, false) AS deprecated");
+            sb.append("\nRETURN EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated");
         } else {
             sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
             appendStabilityWhere(sb, "r", filter);
@@ -1127,7 +1131,7 @@ public class CatalogRepository {
             appendSingletonWhere(sb, "r", filter);
             appendDeclaresCapWhere(sb, "r", filter);
             appendDefinesAttrGroupsWhere(sb, "r", filter);
-            sb.append("\nRETURN coalesce(r.deprecated, false) AS deprecated");
+            sb.append("\nRETURN EXISTS { (r)-[:DEPRECATED_SINCE]->() } AS deprecated");
         }
         return sb.toString();
     }
@@ -1141,13 +1145,13 @@ public class CatalogRepository {
             appendStabilityWhere(sb, "node", filter);
             appendScopeWhere(sb, "r", filter);
             appendAttributeFilters(sb, filter, "node");
-            sb.append("\nRETURN coalesce(node.deprecated, false) AS deprecated");
+            sb.append("\nRETURN EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated");
         } else {
             sb.append("MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
             appendStabilityWhere(sb, "a", filter);
             appendScopeWhere(sb, "r", filter);
             appendAttributeFilters(sb, filter, "a");
-            sb.append("\nRETURN coalesce(a.deprecated, false) AS deprecated");
+            sb.append("\nRETURN EXISTS { (a)-[:DEPRECATED_SINCE]->() } AS deprecated");
         }
         return sb.toString();
     }
@@ -1161,13 +1165,13 @@ public class CatalogRepository {
             appendStabilityWhere(sb, "node", filter);
             appendScopeWhere(sb, "r", filter);
             appendOperationFilters(sb, "node", filter);
-            sb.append("\nRETURN coalesce(node.deprecated, false) AS deprecated");
+            sb.append("\nRETURN EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated");
         } else {
             sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
             appendStabilityWhere(sb, "o", filter);
             appendScopeWhere(sb, "r", filter);
             appendOperationFilters(sb, "o", filter);
-            sb.append("\nRETURN coalesce(o.deprecated, false) AS deprecated");
+            sb.append("\nRETURN EXISTS { (o)-[:DEPRECATED_SINCE]->() } AS deprecated");
         }
         return sb.toString();
     }
