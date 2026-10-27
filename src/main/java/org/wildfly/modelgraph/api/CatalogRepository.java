@@ -79,16 +79,28 @@ public class CatalogRepository {
             facets.put("dataType", dataTypeFacetCounts(filter));
         }
         if (applicable.contains("accessType")) {
-            facets.put("accessType", multiValueAttributeFacetCounts(filter, "accessType",
-                    "toLower(a.`access-type`)", "accessTypes"));
+            Map<String, Long> accessTypeCounts = multiValueAttributeFacetCounts(filter, "accessType",
+                    "toLower(a.`access-type`)", "accessTypes");
+            accessTypeCounts.putIfAbsent("read-write", 0L);
+            accessTypeCounts.putIfAbsent("read-only", 0L);
+            accessTypeCounts.putIfAbsent("metric", 0L);
+            facets.put("accessType", accessTypeCounts);
         }
         if (applicable.contains("storage")) {
-            facets.put("storage", multiValueAttributeFacetCounts(filter, "storage",
-                    "toLower(a.storage)", "storageValues"));
+            Map<String, Long> storageCounts = multiValueAttributeFacetCounts(filter, "storage",
+                    "toLower(a.storage)", "storageValues");
+            storageCounts.putIfAbsent("configuration", 0L);
+            storageCounts.putIfAbsent("runtime", 0L);
+            facets.put("storage", storageCounts);
         }
         if (applicable.contains("restart")) {
-            facets.put("restart", multiValueAttributeFacetCounts(filter, "restart",
-                    "toLower(a.`restart-required`)", "restartValues"));
+            Map<String, Long> restartCounts = multiValueAttributeFacetCounts(filter, "restart",
+                    "toLower(a.`restart-required`)", "restartValues");
+            restartCounts.putIfAbsent("no-services", 0L);
+            restartCounts.putIfAbsent("all-services", 0L);
+            restartCounts.putIfAbsent("resource-services", 0L);
+            restartCounts.putIfAbsent("jvm", 0L);
+            facets.put("restart", restartCounts);
         }
         if (applicable.contains("required")) {
             facets.put("required", booleanAttributeFacetCounts(filter, "required",
@@ -153,6 +165,10 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record ->
                     counts.put(record.get("type").asString(), record.get("count").asLong()));
+            counts.putIfAbsent("resource", 0L);
+            counts.putIfAbsent("attribute", 0L);
+            counts.putIfAbsent("operation", 0L);
+            counts.putIfAbsent("capability", 0L);
             return counts;
         }
     }
@@ -175,6 +191,10 @@ public class CatalogRepository {
                     counts.put(stability, record.get("count").asLong());
                 }
             });
+            counts.putIfAbsent("default", 0L);
+            counts.putIfAbsent("community", 0L);
+            counts.putIfAbsent("preview", 0L);
+            counts.putIfAbsent("experimental", 0L);
             return counts;
         }
     }
@@ -268,6 +288,8 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
+            counts.putIfAbsent("yes", 0L);
+            counts.putIfAbsent("no", 0L);
             return counts;
         }
     }
@@ -1303,6 +1325,17 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
+            counts.putIfAbsent("string", 0L);
+            counts.putIfAbsent("int", 0L);
+            counts.putIfAbsent("long", 0L);
+            counts.putIfAbsent("boolean", 0L);
+            counts.putIfAbsent("double", 0L);
+            counts.putIfAbsent("big-decimal", 0L);
+            counts.putIfAbsent("list", 0L);
+            counts.putIfAbsent("object", 0L);
+            counts.putIfAbsent("bytes", 0L);
+            counts.putIfAbsent("property", 0L);
+            counts.putIfAbsent("complex", 0L);
             return counts;
         }
     }

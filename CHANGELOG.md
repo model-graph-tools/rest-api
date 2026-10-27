@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix catalog API to always include zero-count values in facet count maps for type, stability, dataType, accessType, storage, restart, and boolean attribute facets, preventing client-side undefined key errors
+
 ## [0.3.1] - 2026-10-26
 
 ### Fixed

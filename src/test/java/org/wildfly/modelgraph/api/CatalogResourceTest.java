@@ -396,6 +396,41 @@ class CatalogResourceTest {
     }
 
     @Test
+    void zeroCountFacetValuesPreservedInResponse() {
+        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
+        facets.put("type", new LinkedHashMap<>(Map.of(
+                "resource", 10L, "attribute", 20L, "operation", 0L, "capability", 0L)));
+        facets.put("stability", new LinkedHashMap<>(Map.of(
+                "default", 30L, "community", 0L, "preview", 0L, "experimental", 0L)));
+        facets.put("deprecated", new LinkedHashMap<>(Map.of("yes", 0L, "no", 30L)));
+        facets.put("dataType", new LinkedHashMap<>(Map.of(
+                "string", 10L, "int", 5L, "long", 0L, "boolean", 3L,
+                "double", 0L, "big-decimal", 0L, "list", 0L, "object", 2L)));
+        facets.put("accessType", new LinkedHashMap<>(Map.of(
+                "read-write", 15L, "read-only", 5L, "metric", 0L)));
+        facets.put("required", new LinkedHashMap<>(Map.of("yes", 5L, "no", 25L)));
+
+        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(30);
+        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+
+        given()
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("facets.type.operation", is(0))
+                .body("facets.type.capability", is(0))
+                .body("facets.stability.community", is(0))
+                .body("facets.stability.preview", is(0))
+                .body("facets.stability.experimental", is(0))
+                .body("facets.deprecated.yes", is(0))
+                .body("facets.dataType.long", is(0))
+                .body("facets.dataType.double", is(0))
+                .body("facets.accessType.metric", is(0))
+                .body("facets.required.yes", is(5));
+    }
+
+    @Test
     void hasParamsBooleanFilterPassesThrough() {
         List<CatalogResult> results = List.of(
                 new CatalogResult("operation", "add", "Adds resource",

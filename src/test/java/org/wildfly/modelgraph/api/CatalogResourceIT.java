@@ -803,6 +803,136 @@ class CatalogResourceIT {
         assertThat("refsCap facet should be absent for resources", facets, not(hasKey("refsCap")));
     }
 
+    // ------------------------------------------------------ zero-count backfill tests
+
+    @Test
+    void typeFacetAlwaysContainsAllFourKeys() {
+        var response = given()
+                .queryParam("stability", "experimental")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> typeFacets = response.getMap("facets.type");
+        assertThat("type facet should have resource key", typeFacets, hasKey("resource"));
+        assertThat("type facet should have attribute key", typeFacets, hasKey("attribute"));
+        assertThat("type facet should have operation key", typeFacets, hasKey("operation"));
+        assertThat("type facet should have capability key", typeFacets, hasKey("capability"));
+    }
+
+    @Test
+    void stabilityFacetAlwaysContainsAllKeys() {
+        var response = given()
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> stabilityFacets = response.getMap("facets.stability");
+        assertThat("stability facet should have default key", stabilityFacets, hasKey("default"));
+        assertThat("stability facet should have community key", stabilityFacets, hasKey("community"));
+        assertThat("stability facet should have preview key", stabilityFacets, hasKey("preview"));
+        assertThat("stability facet should have experimental key", stabilityFacets, hasKey("experimental"));
+    }
+
+    @Test
+    void dataTypeFacetAlwaysContainsAllKeys() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> dataTypeFacets = response.getMap("facets.dataType");
+        for (String key : List.of("string", "int", "long", "boolean", "double",
+                "big-decimal", "list", "object", "bytes", "property", "complex")) {
+            assertThat("dataType facet should have " + key + " key", dataTypeFacets, hasKey(key));
+        }
+    }
+
+    @Test
+    void accessTypeFacetAlwaysContainsAllKeys() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> accessTypeFacets = response.getMap("facets.accessType");
+        assertThat("accessType facet should have read-write key", accessTypeFacets, hasKey("read-write"));
+        assertThat("accessType facet should have read-only key", accessTypeFacets, hasKey("read-only"));
+        assertThat("accessType facet should have metric key", accessTypeFacets, hasKey("metric"));
+    }
+
+    @Test
+    void storageFacetAlwaysContainsAllKeys() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> storageFacets = response.getMap("facets.storage");
+        assertThat("storage facet should have configuration key", storageFacets, hasKey("configuration"));
+        assertThat("storage facet should have runtime key", storageFacets, hasKey("runtime"));
+    }
+
+    @Test
+    void restartFacetAlwaysContainsAllKeys() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> restartFacets = response.getMap("facets.restart");
+        assertThat("restart facet should have no-services key", restartFacets, hasKey("no-services"));
+        assertThat("restart facet should have all-services key", restartFacets, hasKey("all-services"));
+        assertThat("restart facet should have resource-services key", restartFacets, hasKey("resource-services"));
+        assertThat("restart facet should have jvm key", restartFacets, hasKey("jvm"));
+    }
+
+    @Test
+    void booleanAttributeFacetsAlwaysContainYesAndNo() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> facets = response.getMap("facets");
+        for (String facetName : List.of("required", "nillable", "expressions")) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> facet = (Map<String, Object>) facets.get(facetName);
+            assertThat(facetName + " facet should have yes key", facet, hasKey("yes"));
+            assertThat(facetName + " facet should have no key", facet, hasKey("no"));
+        }
+    }
+
+    @Test
+    void facetCountValuesAreNeverNull() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Map<String, Object>> facets = response.getMap("facets");
+        for (Map.Entry<String, Map<String, Object>> facetEntry : facets.entrySet()) {
+            for (Map.Entry<String, Object> countEntry : facetEntry.getValue().entrySet()) {
+                assertThat("Facet " + facetEntry.getKey() + "." + countEntry.getKey() + " should not be null",
+                        countEntry.getValue(), notNullValue());
+            }
+        }
+    }
+
     @Test
     void operationFacetsOmittedWhenTypeIsResource() {
         var response = given()
