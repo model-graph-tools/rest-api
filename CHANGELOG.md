@@ -8,18 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Add `GET /api/capability/{name}` detail endpoint returning capability properties, declaring resources, and referencing attributes with OpenAPI annotations
-- Add `GET /api/resource?address=...` detail endpoint returning resource properties, deprecation with reason, parent address, child resources, attributes, operations, and capabilities
-- Add `GET /api/attribute?resource=...&name=...` detail endpoint returning all attribute properties, deprecation, sensitivity, capability reference, required/alternative siblings, and sub-attributes
-- Add `GET /api/operation?resource=...&name=...` detail endpoint returning all operation properties, deprecation, full parameters with defaults and allowed values, and return value
-- Add OpenAPI `@Operation`, `@APIResponse`, `@Parameter`, and `@Schema` annotations to all endpoints and response records
+- Add detail endpoints for resources (`GET /api/resource`), attributes (`GET /api/attribute`), operations (`GET /api/operation`), and capabilities (`GET /api/capability/{name}`) returning full properties, deprecation info, relationships, and sub-elements ([#48], [#49], [#50], [#51])
+- Add OpenAPI annotations to all endpoints and response records
 
 ### Changed
+- **BREAKING:** Replace boolean `declaresCap` resource facet with `capabilities` name list, and add `capabilityReference` to attribute properties in catalog results ([#43])
+- **BREAKING:** Split `hasRelationships` catalog facet into separate `hasRequires` and `hasAlternatives` facets for finer-grained attribute filtering ([#44])
 - Default catalog sort to address when type is resource
-- Convert `CatalogFilter` from class to record
 
 ### Fixed
-- Fix `hasAllowed` facet by using correct Neo4j property name
+- Fix `hasAllowed` facet by using correct Neo4j property name ([#45])
 
 ## [0.3.3] - 2026-10-27
 
@@ -178,3 +176,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.1.3]: https://github.com/model-graph-tools/rest-api/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/model-graph-tools/rest-api/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/model-graph-tools/rest-api/compare/v0.1.0...v0.1.1
+
+[#43]: https://github.com/model-graph-tools/rest-api/issues/43
+[#44]: https://github.com/model-graph-tools/rest-api/issues/44
+[#45]: https://github.com/model-graph-tools/rest-api/issues/45
+[#48]: https://github.com/model-graph-tools/rest-api/issues/48
+[#49]: https://github.com/model-graph-tools/rest-api/issues/49
+[#50]: https://github.com/model-graph-tools/rest-api/issues/50
+[#51]: https://github.com/model-graph-tools/rest-api/issues/51
