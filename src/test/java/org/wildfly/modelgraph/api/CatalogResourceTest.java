@@ -30,7 +30,7 @@ class CatalogResourceTest {
                 new CatalogResult("attribute", "enabled", "Whether enabled", "/subsystem=io/buffer-pool=*/enabled",
                         "/subsystem=io/buffer-pool=*", "default", false,
                         new AttributeProperties("boolean", "read-write", "configuration", "all-services",
-                                false, true, true, false, null)));
+                                false, true, true, false, null, null)));
         Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
         facets.put("type", Map.of("resource", 10L, "attribute", 20L, "operation", 5L, "capability", 3L));
         facets.put("stability", Map.of("default", 30L, "community", 5L, "preview", 3L));
@@ -132,7 +132,7 @@ class CatalogResourceTest {
     void resourceResultsIncludeProperties() {
         List<CatalogResult> results = List.of(
                 new CatalogResult("resource", "buffer-pool", "A buffer pool", "/subsystem=io/buffer-pool=*",
-                        null, "default", false, new ResourceProperties(true, false, true)));
+                        null, "default", false, new ResourceProperties(true, List.of(), true)));
         Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
         facets.put("type", Map.of("resource", 1L));
         facets.put("stability", Map.of("default", 1L));
@@ -147,7 +147,7 @@ class CatalogResourceTest {
                 .then()
                 .statusCode(200)
                 .body("results[0].properties.singleton", is(true))
-                .body("results[0].properties.declaresCap", is(false))
+                .body("results[0].properties.capabilities", is(empty()))
                 .body("results[0].properties.definesAttrGroups", is(true));
     }
 
@@ -285,11 +285,11 @@ class CatalogResourceTest {
                 new CatalogResult("attribute", "max-threads", "Maximum threads", "/subsystem=io/worker=*/max-threads",
                         "/subsystem=io/worker=*", "default", false,
                         new AttributeProperties("int", "read-write", "configuration", "all-services",
-                                false, false, true, false, null)),
+                                false, false, true, false, null, null)),
                 new CatalogResult("attribute", "enabled", "Whether enabled", "/subsystem=io/buffer-pool=*/enabled",
                         "/subsystem=io/buffer-pool=*", "default", false,
                         new AttributeProperties("boolean", "read-write", "configuration", "all-services",
-                                false, true, true, false, null)));
+                                false, true, true, false, null, null)));
         Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
         facets.put("type", Map.of("attribute", 2L));
         facets.put("dataType", Map.of("int", 1L, "boolean", 1L));
@@ -314,7 +314,7 @@ class CatalogResourceTest {
                 new CatalogResult("attribute", "name", "The name", "/subsystem=datasources/data-source=*/name",
                         "/subsystem=datasources/data-source=*", "default", false,
                         new AttributeProperties("string", "read-write", "configuration", "all-services",
-                                true, false, true, false, null)));
+                                true, false, true, false, null, null)));
         Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
         facets.put("type", Map.of("attribute", 1L));
         facets.put("required", Map.of("yes", 1L, "no", 0L));

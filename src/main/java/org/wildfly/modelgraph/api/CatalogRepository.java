@@ -344,7 +344,7 @@ public class CatalogRepository {
         StringBuilder returnClause = new StringBuilder();
         returnClause.append("RETURN type, name, description, address, resourceAddress, stability, deprecated, properties");
         if (includesResource) {
-            returnClause.append(", singleton, declaresCap, definesAttrGroups");
+            returnClause.append(", singleton, capabilities, definesAttrGroups");
         }
         if (includesOperation) {
             returnClause.append(", readOnly, runtimeOnly, isGlobal, hasParams, hasReturnValue");
@@ -459,7 +459,7 @@ public class CatalogRepository {
             sb.append("node.address AS address, null AS resourceAddress, toLower(node.stability) AS stability, ");
             sb.append("EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties, ");
             sb.append("coalesce(node.singleton, false) AS singleton, ");
-            sb.append("EXISTS { (node)-[:DECLARES_CAPABILITY]->() } AS declaresCap, ");
+            sb.append("[(node)-[:DECLARES_CAPABILITY]->(cap) | cap.name] AS capabilities, ");
             sb.append("EXISTS { (node)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } AS definesAttrGroups");
             if (includesOperation) {
                 sb.append(NULL_OP_PROPS);
@@ -477,7 +477,7 @@ public class CatalogRepository {
             sb.append("r.address AS address, null AS resourceAddress, toLower(r.stability) AS stability, ");
             sb.append("EXISTS { (r)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties, ");
             sb.append("coalesce(r.singleton, false) AS singleton, ");
-            sb.append("EXISTS { (r)-[:DECLARES_CAPABILITY]->() } AS declaresCap, ");
+            sb.append("[(r)-[:DECLARES_CAPABILITY]->(cap) | cap.name] AS capabilities, ");
             sb.append("EXISTS { (r)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } AS definesAttrGroups");
             if (includesOperation) {
                 sb.append(NULL_OP_PROPS);
@@ -503,9 +503,10 @@ public class CatalogRepository {
             sb.append("storage: toLower(node.storage), restart: toLower(node.`restart-required`), ");
             sb.append("required: coalesce(node.required, false), nillable: coalesce(node.nillable, false), ");
             sb.append("expressions: coalesce(node.`expressions-allowed`, false), ");
-            sb.append("sensitive: EXISTS { (node)-[:IS_SENSITIVE]->() }, unit: toLower(node.unit)} AS properties");
+            sb.append("sensitive: EXISTS { (node)-[:IS_SENSITIVE]->() }, unit: toLower(node.unit), ");
+            sb.append("capabilityReference: head([(node)-[:REFERENCES_CAPABILITY]->(cap) | cap.name])} AS properties");
             if (includesResource) {
-                sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
+                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
             }
             if (includesOperation) {
                 sb.append(NULL_OP_PROPS);
@@ -525,9 +526,10 @@ public class CatalogRepository {
             sb.append("storage: toLower(a.storage), restart: toLower(a.`restart-required`), ");
             sb.append("required: coalesce(a.required, false), nillable: coalesce(a.nillable, false), ");
             sb.append("expressions: coalesce(a.`expressions-allowed`, false), ");
-            sb.append("sensitive: EXISTS { (a)-[:IS_SENSITIVE]->() }, unit: toLower(a.unit)} AS properties");
+            sb.append("sensitive: EXISTS { (a)-[:IS_SENSITIVE]->() }, unit: toLower(a.unit), ");
+            sb.append("capabilityReference: head([(a)-[:REFERENCES_CAPABILITY]->(cap) | cap.name])} AS properties");
             if (includesResource) {
-                sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
+                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
             }
             if (includesOperation) {
                 sb.append(NULL_OP_PROPS);
@@ -550,7 +552,7 @@ public class CatalogRepository {
             sb.append("r.address + '/' + node.name AS address, r.address AS resourceAddress, toLower(node.stability) AS stability, ");
             sb.append("EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties");
             if (includesResource) {
-                sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
+                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
             }
             sb.append(OP_PROPS_SEARCH);
             sb.append(", score");
@@ -564,7 +566,7 @@ public class CatalogRepository {
             sb.append("r.address + '/' + o.name AS address, r.address AS resourceAddress, toLower(o.stability) AS stability, ");
             sb.append("EXISTS { (o)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties");
             if (includesResource) {
-                sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
+                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
             }
             sb.append(OP_PROPS);
         }
@@ -579,7 +581,7 @@ public class CatalogRepository {
             sb.append("null AS address, null AS resourceAddress, toLower(c.stability) AS stability, ");
             sb.append("false AS deprecated, null AS properties");
             if (includesResource) {
-                sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
+                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
             }
             if (includesOperation) {
                 sb.append(NULL_OP_PROPS);
@@ -602,7 +604,7 @@ public class CatalogRepository {
             sb.append("null AS address, null AS resourceAddress, toLower(c.stability) AS stability, ");
             sb.append("false AS deprecated, null AS properties");
             if (includesResource) {
-                sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
+                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
             }
             if (includesOperation) {
                 sb.append(NULL_OP_PROPS);
@@ -622,7 +624,7 @@ public class CatalogRepository {
             sb.append("null AS address, null AS resourceAddress, toLower(c.stability) AS stability, ");
             sb.append("false AS deprecated, null AS properties");
             if (includesResource) {
-                sb.append(", null AS singleton, null AS declaresCap, null AS definesAttrGroups");
+                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
             }
             if (includesOperation) {
                 sb.append(NULL_OP_PROPS);
@@ -1702,9 +1704,13 @@ public class CatalogRepository {
         String type = record.get("type").asString();
         Properties properties = null;
         if ("resource".equals(type) && filter.includesType(CatalogType.RESOURCE)) {
+            var capsValue = record.get("capabilities");
+            List<String> capabilities = capsValue.isNull()
+                    ? List.of()
+                    : capsValue.asList(org.neo4j.driver.Value::asString);
             properties = new ResourceProperties(
                     record.get("singleton").asBoolean(false),
-                    record.get("declaresCap").asBoolean(false),
+                    capabilities,
                     record.get("definesAttrGroups").asBoolean(false));
         } else if ("attribute".equals(type)) {
             var propsValue = record.get("properties");
@@ -1719,7 +1725,8 @@ public class CatalogRepository {
                         asBoolean(propsMap.get("nillable")),
                         asBoolean(propsMap.get("expressions")),
                         asBoolean(propsMap.get("sensitive")),
-                        asString(propsMap.get("unit")));
+                        asString(propsMap.get("unit")),
+                        asString(propsMap.get("capabilityReference")));
             }
         } else if ("operation".equals(type) && filter.includesType(CatalogType.OPERATION)) {
             properties = new OperationProperties(

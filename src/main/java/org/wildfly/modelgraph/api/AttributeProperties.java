@@ -35,5 +35,8 @@ public record AttributeProperties(
         boolean sensitive,
 
         @Schema(description = "Measurement unit of the attribute", example = "milliseconds", enumeration = {"milliseconds", "bytes", "seconds", "per_second", "nanoseconds", "minutes", "percentage", "days"})
-        String unit) implements Properties {
+        String unit,
+
+        @Schema(description = "Name of the referenced capability (null if none)")
+        String capabilityReference) implements Properties {
 }

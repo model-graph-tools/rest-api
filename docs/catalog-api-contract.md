@@ -126,7 +126,8 @@ declared type. This is derived in the Cypher query using
         "nillable": true,
         "expressions": true,
         "sensitive": false,
-        "unit": null
+        "unit": null,
+        "capabilityReference": null
       }
     }
   ],
@@ -189,13 +190,13 @@ This convention also applies to the existing `/api/search` endpoint (retrofit).
 
 **Attribute properties:**
 `dataType`, `accessType`, `storage`, `restart`, `required`, `nillable`, `expressions`,
-`sensitive`, `unit`
+`sensitive`, `unit`, `capabilityReference` (string, the name of the referenced capability, or null)
 
 **Operation properties:**
 `readOnly`, `runtimeOnly`, `global`, `hasParams`, `hasReturnValue`
 
 **Resource properties:**
-`singleton`, `declaresCap` (boolean), `definesAttrGroups`
+`singleton`, `capabilities` (list of capability name strings, empty if none), `definesAttrGroups`
 
 **Capability:** No additional properties.
 
