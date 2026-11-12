@@ -170,8 +170,8 @@ class CatalogResourceIT {
                 .body("results", not(empty()))
                 .extract().jsonPath();
 
-        List<Boolean> declaresCaps = response.getList("results.properties.declaresCap");
-        assertThat("All results should declare capabilities", declaresCaps, everyItem(is(true)));
+        List<List<String>> capabilities = response.getList("results.properties.capabilities");
+        assertThat("All results should have non-empty capabilities", capabilities, everyItem(not(empty())));
     }
 
     @Test
@@ -185,9 +185,11 @@ class CatalogResourceIT {
                 .statusCode(200)
                 .extract().jsonPath();
 
-        List<Boolean> declaresCaps = response.getList("results.properties.declaresCap");
-        if (!declaresCaps.isEmpty()) {
-            assertThat("All results should declare capabilities", declaresCaps, everyItem(is(true)));
+        List<List<String>> capabilities = response.getList("results.properties.capabilities");
+        for (List<String> caps : capabilities) {
+            assertThat("Result should have non-empty capabilities", caps, not(empty()));
+            assertThat("At least one capability should contain 'io'",
+                    caps.stream().anyMatch(c -> c.toLowerCase().contains("io")), is(true));
         }
     }
 
@@ -225,7 +227,7 @@ class CatalogResourceIT {
             Map<String, Object> properties = (Map<String, Object>) result.get("properties");
             assertThat("Resource should have properties", properties, notNullValue());
             assertThat("Properties should have singleton", properties, hasKey("singleton"));
-            assertThat("Properties should have declaresCap", properties, hasKey("declaresCap"));
+            assertThat("Properties should have capabilities", properties, hasKey("capabilities"));
             assertThat("Properties should have definesAttrGroups", properties, hasKey("definesAttrGroups"));
         }
     }
