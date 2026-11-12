@@ -160,11 +160,18 @@ public class CatalogResource {
             @QueryParam("sensitive") Boolean sensitive,
 
             @Parameter(
-                    name = "hasRelationships",
-                    description = "Attribute: has REQUIRES or ALTERNATIVE dependencies. Only applies to attributes.",
+                    name = "hasRequires",
+                    description = "Attribute: has REQUIRES dependencies (if you set A, you must set B). Only applies to attributes.",
                     example = "true",
                     schema = @Schema(type = SchemaType.BOOLEAN))
-            @QueryParam("hasRelationships") Boolean hasRelationships,
+            @QueryParam("hasRequires") Boolean hasRequires,
+
+            @Parameter(
+                    name = "hasAlternatives",
+                    description = "Attribute: has ALTERNATIVE dependencies (set A or B, not both). Only applies to attributes.",
+                    example = "true",
+                    schema = @Schema(type = SchemaType.BOOLEAN))
+            @QueryParam("hasAlternatives") Boolean hasAlternatives,
 
             @Parameter(
                     name = "refsCap",
@@ -240,7 +247,7 @@ public class CatalogResource {
                 singleton, declaresCap, definesAttrGroups,
                 dataType, accessType, storage, restart, required, nillable, expressions,
                 unit, hasAllowed,
-                sensitive, hasRelationships, refsCap,
+                sensitive, hasRequires, hasAlternatives, refsCap,
                 readOnly, runtimeOnly, global, hasParams, hasReturnValue,
                 sort, order, limit, offset);
         var results = repository.search(filter);
