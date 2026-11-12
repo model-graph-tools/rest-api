@@ -23,7 +23,8 @@ public record CatalogFilter(
         List<String> units,
         Boolean hasAllowed,
         Boolean sensitive,
-        Boolean hasRelationships,
+        Boolean hasRequires,
+        Boolean hasAlternatives,
         String refsCap,
         Boolean readOnly,
         Boolean runtimeOnly,
@@ -50,7 +51,7 @@ public record CatalogFilter(
             String dataType, String accessType, String storage, String restart,
             Boolean required, Boolean nillable, Boolean expressions,
             String unit, Boolean hasAllowed,
-            Boolean sensitive, Boolean hasRelationships, String refsCap,
+            Boolean sensitive, Boolean hasRequires, Boolean hasAlternatives, String refsCap,
             Boolean readOnly, Boolean runtimeOnly, Boolean global,
             Boolean hasParams, Boolean hasReturnValue,
             String sort, String order, Integer limit, Integer offset) {
@@ -80,7 +81,7 @@ public record CatalogFilter(
                 singleton, effectiveDeclaresCap, definesAttrGroups,
                 dataTypes, accessTypes, storageValues, restartValues, required, nillable,
                 expressions, units, hasAllowed,
-                sensitive, hasRelationships, effectiveRefsCap,
+                sensitive, hasRequires, hasAlternatives, effectiveRefsCap,
                 readOnly, runtimeOnly, global, hasParams, hasReturnValue,
                 effectiveSort, effectiveOrder, effectiveLimit, effectiveOffset);
     }
@@ -175,8 +176,12 @@ public record CatalogFilter(
         return sensitive != null;
     }
 
-    public boolean hasHasRelationshipsFilter() {
-        return hasRelationships != null;
+    public boolean hasHasRequiresFilter() {
+        return hasRequires != null;
+    }
+
+    public boolean hasHasAlternativesFilter() {
+        return hasAlternatives != null;
     }
 
     public boolean hasRefsCapFilter() {
@@ -203,7 +208,8 @@ public record CatalogFilter(
         return hasDataTypeFilter() || hasAccessTypeFilter() || hasStorageFilter()
                 || hasRestartFilter() || hasRequiredFilter() || hasNillableFilter()
                 || hasExpressionsFilter() || hasUnitFilter() || hasHasAllowedFilter()
-                || hasSensitiveFilter() || hasHasRelationshipsFilter() || hasRefsCapFilter();
+                || hasSensitiveFilter() || hasHasRequiresFilter() || hasHasAlternativesFilter()
+                || hasRefsCapFilter();
     }
 
     public boolean hasAnyOperationFilter() {

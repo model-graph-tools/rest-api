@@ -124,8 +124,11 @@ public class CatalogRepository {
         if (applicable.contains("sensitive")) {
             facets.put("sensitive", sensitiveFacetCounts(filter));
         }
-        if (applicable.contains("hasRelationships")) {
-            facets.put("hasRelationships", hasRelationshipsFacetCounts(filter));
+        if (applicable.contains("hasRequires")) {
+            facets.put("hasRequires", hasRequiresFacetCounts(filter));
+        }
+        if (applicable.contains("hasAlternatives")) {
+            facets.put("hasAlternatives", hasAlternativesFacetCounts(filter));
         }
         if (applicable.contains("refsCap")) {
             facets.put("refsCap", refsCapFacetCounts(filter));
@@ -718,14 +721,22 @@ public class CatalogRepository {
         }
     }
 
-    private void appendHasRelationshipsWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
-        if (filter.hasHasRelationshipsFilter()) {
-            if (filter.hasRelationships()) {
-                sb.append(" AND (EXISTS { (").append(nodeVar).append(")-[:REQUIRES]->() } OR EXISTS { (")
-                        .append(nodeVar).append(")-[:ALTERNATIVE]->() })");
+    private void appendHasRequiresWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+        if (filter.hasHasRequiresFilter()) {
+            if (filter.hasRequires()) {
+                sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:REQUIRES]->() }");
             } else {
-                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:REQUIRES]->() } AND NOT EXISTS { (")
-                        .append(nodeVar).append(")-[:ALTERNATIVE]->() }");
+                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:REQUIRES]->() }");
+            }
+        }
+    }
+
+    private void appendHasAlternativesWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+        if (filter.hasHasAlternativesFilter()) {
+            if (filter.hasAlternatives()) {
+                sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:ALTERNATIVE]->() }");
+            } else {
+                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:ALTERNATIVE]->() }");
             }
         }
     }
@@ -780,7 +791,8 @@ public class CatalogRepository {
             }
         }
         appendSensitiveWhere(sb, nodeVar, filter);
-        appendHasRelationshipsWhere(sb, nodeVar, filter);
+        appendHasRequiresWhere(sb, nodeVar, filter);
+        appendHasAlternativesWhere(sb, nodeVar, filter);
         appendRefsCapWhere(sb, nodeVar, filter);
     }
 
@@ -820,8 +832,11 @@ public class CatalogRepository {
         if (!"sensitive".equals(excludeFacet)) {
             appendSensitiveWhere(sb, nodeVar, filter);
         }
-        if (!"hasRelationships".equals(excludeFacet)) {
-            appendHasRelationshipsWhere(sb, nodeVar, filter);
+        if (!"hasRequires".equals(excludeFacet)) {
+            appendHasRequiresWhere(sb, nodeVar, filter);
+        }
+        if (!"hasAlternatives".equals(excludeFacet)) {
+            appendHasAlternativesWhere(sb, nodeVar, filter);
         }
         if (!"refsCap".equals(excludeFacet)) {
             appendRefsCapWhere(sb, nodeVar, filter);
@@ -1381,7 +1396,15 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> hasRelationshipsFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> hasRequiresFacetCounts(CatalogFilter filter) {
+        return relationshipFacetCounts(filter, "hasRequires", "REQUIRES");
+    }
+
+    private Map<String, Long> hasAlternativesFacetCounts(CatalogFilter filter) {
+        return relationshipFacetCounts(filter, "hasAlternatives", "ALTERNATIVE");
+    }
+
+    private Map<String, Long> relationshipFacetCounts(CatalogFilter filter, String facetName, String relType) {
         StringBuilder query = new StringBuilder();
         String nodeVar;
         if (filter.hasSearchQuery()) {
@@ -1391,7 +1414,7 @@ public class CatalogRepository {
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, "hasRelationships", "node");
+            appendAttributeFiltersExcluding(query, filter, facetName, "node");
             nodeVar = "node";
         } else {
             query.append(
@@ -1399,12 +1422,11 @@ public class CatalogRepository {
             appendStabilityWhere(query, "a", filter);
             appendDeprecatedWhere(query, "a", filter);
             appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, "hasRelationships", "a");
+            appendAttributeFiltersExcluding(query, filter, facetName, "a");
             nodeVar = "a";
         }
         query.append("\nRETURN CASE WHEN EXISTS { (").append(nodeVar)
-                .append(")-[:REQUIRES]->() } OR EXISTS { (").append(nodeVar)
-                .append(")-[:ALTERNATIVE]->() } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+                .append(")-[:").append(relType).append("]->() } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);

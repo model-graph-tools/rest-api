@@ -9,7 +9,7 @@ public enum CatalogType {
             "dataType", "accessType", "storage", "restart",
             "required", "nillable", "expressions",
             "unit", "hasAllowed",
-            "sensitive", "hasRelationships", "refsCap")),
+            "sensitive", "hasRequires", "hasAlternatives", "refsCap")),
     OPERATION("operation", Set.of("type", "stability", "deprecated",
             "readOnly", "runtimeOnly", "global", "hasParams", "hasReturnValue")),
     CAPABILITY("capability", Set.of("type", "stability", "deprecated"));

@@ -43,7 +43,8 @@ items (paginated) with full facet counts.
 | `sensitive` | boolean | Attribute: `IS_SENSITIVE` relationship |
 | `hasAllowed` | boolean | Attribute: has allowed values |
 | `unit` | string (multi) | Attribute: `milliseconds`, `bytes`, `seconds`, `per_second`, `nanoseconds`, `minutes`, `percentage`, `days` |
-| `hasRelationships` | boolean | Attribute: has `REQUIRES` or `ALTERNATIVE` dependencies |
+| `hasRequires` | boolean | Attribute: has `REQUIRES` dependencies |
+| `hasAlternatives` | boolean | Attribute: has `ALTERNATIVE` dependencies |
 | `refsCap` | string | Attribute: `yes`, `no`, or `contains:<text>` |
 | `readOnly` | boolean | Operation: read-only flag |
 | `runtimeOnly` | boolean | Operation: runtime-only flag |
@@ -144,7 +145,8 @@ declared type. This is derived in the Cypher query using
     "hasAllowed": { "yes": 18, "no": 110 },
     "unit": { "milliseconds": 8, "bytes": 5, "seconds": 3 },
     "definesAttrGroups": { "yes": 40, "no": 88 },
-    "hasRelationships": { "yes": 10, "no": 118 },
+    "hasRequires": { "yes": 10, "no": 118 },
+    "hasAlternatives": { "yes": 5, "no": 123 },
     "refsCap": { "yes": 8, "no": 120 },
     "singleton": { "yes": 20, "no": 22 },
     "declaresCap": { "yes": 15, "no": 27 },
@@ -286,7 +288,7 @@ usable generated documentation (30+ query params need descriptions and examples)
 | `DECLARES_CAPABILITY` | Resource | Capability | `declaresCap` |
 | `REFERENCES_CAPABILITY` | Attribute | Capability | `refsCap` |
 | `IS_SENSITIVE` | Attribute | Constraint | `sensitive` |
-| `REQUIRES` | Attribute | Attribute | `hasRelationships` |
-| `ALTERNATIVE` | Attribute | Attribute | `hasRelationships` |
+| `REQUIRES` | Attribute | Attribute | `hasRequires` |
+| `ALTERNATIVE` | Attribute | Attribute | `hasAlternatives` |
 | `CONSISTS_OF` | Attribute | Attribute | `dataType=complex` |
 | `CHILD_OF` | Resource | Resource | (tree structure) |

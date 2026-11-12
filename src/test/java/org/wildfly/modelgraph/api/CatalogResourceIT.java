@@ -703,10 +703,25 @@ class CatalogResourceIT {
     }
 
     @Test
-    void hasRelationshipsTrueReturnsAttributesWithRelationships() {
+    void hasRequiresTrueReturnsAttributesWithRequires() {
         var response = given()
                 .queryParam("type", "attribute")
-                .queryParam("hasRelationships", true)
+                .queryParam("hasRequires", true)
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be attributes", types, everyItem(is("attribute")));
+    }
+
+    @Test
+    void hasAlternativesTrueReturnsAttributesWithAlternatives() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("hasAlternatives", true)
                 .queryParam("limit", 100)
                 .when().get("/api/catalog")
                 .then()
@@ -799,7 +814,8 @@ class CatalogResourceIT {
 
         Map<String, Object> facets = response.getMap("facets");
         assertThat("facets should contain sensitive", facets, hasKey("sensitive"));
-        assertThat("facets should contain hasRelationships", facets, hasKey("hasRelationships"));
+        assertThat("facets should contain hasRequires", facets, hasKey("hasRequires"));
+        assertThat("facets should contain hasAlternatives", facets, hasKey("hasAlternatives"));
         assertThat("facets should contain refsCap", facets, hasKey("refsCap"));
     }
 
@@ -814,7 +830,8 @@ class CatalogResourceIT {
 
         Map<String, Object> facets = response.getMap("facets");
         assertThat("sensitive facet should be absent for resources", facets, not(hasKey("sensitive")));
-        assertThat("hasRelationships facet should be absent for resources", facets, not(hasKey("hasRelationships")));
+        assertThat("hasRequires facet should be absent for resources", facets, not(hasKey("hasRequires")));
+        assertThat("hasAlternatives facet should be absent for resources", facets, not(hasKey("hasAlternatives")));
         assertThat("refsCap facet should be absent for resources", facets, not(hasKey("refsCap")));
     }
 
