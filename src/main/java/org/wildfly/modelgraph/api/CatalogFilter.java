@@ -112,7 +112,7 @@ public final class CatalogFilter {
         String effectiveRefsCap = (refsCap != null && !refsCap.isBlank())
                 ? refsCap.strip().toLowerCase()
                 : null;
-        String effectiveSort = parseSort(sort, effectiveQ);
+        String effectiveSort = parseSort(sort, effectiveQ, types);
         String effectiveOrder = parseOrder(order);
         int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, MAX_LIMIT) : DEFAULT_LIMIT;
         int effectiveOffset = (offset != null && offset >= 0) ? offset : DEFAULT_OFFSET;
@@ -415,7 +415,7 @@ public final class CatalogFilter {
         return null;
     }
 
-    private static String parseSort(String sort, String q) {
+    private static String parseSort(String sort, String q, List<String> types) {
         if (sort != null && !sort.isBlank()) {
             String lower = sort.strip().toLowerCase();
             if (List.of("name", "type", "address", "stability").contains(lower)) {
@@ -424,6 +424,9 @@ public final class CatalogFilter {
         }
         if (q != null) {
             return "score";
+        }
+        if (types.size() == 1 && types.contains("resource")) {
+            return "address";
         }
         return DEFAULT_SORT;
     }
