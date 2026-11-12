@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-12
+
 ### Added
 - Add detail endpoints for resources (`GET /api/resource`), attributes (`GET /api/attribute`), operations (`GET /api/operation`), and capabilities (`GET /api/capability/{name}`) returning full properties, deprecation info, relationships, and sub-elements ([#48], [#49], [#50], [#51])
 - Add OpenAPI annotations to all endpoints and response records
@@ -158,7 +160,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release script and CI workflows (verify + release)
 - Multi-arch native image builds (amd64 + arm64)
 
-[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.3.3...HEAD
+
+[#43]: https://github.com/model-graph-tools/rest-api/issues/43
+[#44]: https://github.com/model-graph-tools/rest-api/issues/44
+[#45]: https://github.com/model-graph-tools/rest-api/issues/45
+[#48]: https://github.com/model-graph-tools/rest-api/issues/48
+[#49]: https://github.com/model-graph-tools/rest-api/issues/49
+[#50]: https://github.com/model-graph-tools/rest-api/issues/50
+[#51]: https://github.com/model-graph-tools/rest-api/issues/51
+[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/model-graph-tools/rest-api/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/model-graph-tools/rest-api/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/model-graph-tools/rest-api/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/model-graph-tools/rest-api/compare/v0.3.0...v0.3.1
@@ -176,11 +187,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.1.3]: https://github.com/model-graph-tools/rest-api/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/model-graph-tools/rest-api/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/model-graph-tools/rest-api/compare/v0.1.0...v0.1.1
-
-[#43]: https://github.com/model-graph-tools/rest-api/issues/43
-[#44]: https://github.com/model-graph-tools/rest-api/issues/44
-[#45]: https://github.com/model-graph-tools/rest-api/issues/45
-[#48]: https://github.com/model-graph-tools/rest-api/issues/48
-[#49]: https://github.com/model-graph-tools/rest-api/issues/49
-[#50]: https://github.com/model-graph-tools/rest-api/issues/50
-[#51]: https://github.com/model-graph-tools/rest-api/issues/51
