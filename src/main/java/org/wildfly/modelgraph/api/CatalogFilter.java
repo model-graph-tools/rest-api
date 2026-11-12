@@ -4,7 +4,38 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-public final class CatalogFilter {
+public record CatalogFilter(
+        String q,
+        List<String> types,
+        List<String> stabilities,
+        String deprecated,
+        String scope,
+        Boolean singleton,
+        String declaresCap,
+        Boolean definesAttrGroups,
+        List<String> dataTypes,
+        List<String> accessTypes,
+        List<String> storageValues,
+        List<String> restartValues,
+        Boolean required,
+        Boolean nillable,
+        Boolean expressions,
+        List<String> units,
+        Boolean hasAllowed,
+        Boolean sensitive,
+        Boolean hasRelationships,
+        String refsCap,
+        Boolean readOnly,
+        Boolean runtimeOnly,
+        Boolean global,
+        Boolean hasParams,
+        Boolean hasReturnValue,
+        String sort,
+        String order,
+        int limit,
+        int offset) {
+
+    // ------------------------------------------------------ factory
 
     private static final int DEFAULT_LIMIT = 50;
     private static final int MAX_LIMIT = 500;
@@ -12,77 +43,6 @@ public final class CatalogFilter {
     private static final String DEFAULT_SORT = "name";
     private static final String DEFAULT_ORDER = "asc";
     private static final Set<String> VALID_TYPES = Set.of("resource", "attribute", "operation", "capability");
-
-    private final String q;
-    private final List<String> types;
-    private final List<String> stabilities;
-    private final String deprecated;
-    private final String scope;
-    private final Boolean singleton;
-    private final String declaresCap;
-    private final Boolean definesAttrGroups;
-    private final List<String> dataTypes;
-    private final List<String> accessTypes;
-    private final List<String> storageValues;
-    private final List<String> restartValues;
-    private final Boolean required;
-    private final Boolean nillable;
-    private final Boolean expressions;
-    private final List<String> units;
-    private final Boolean hasAllowed;
-    private final Boolean sensitive;
-    private final Boolean hasRelationships;
-    private final String refsCap;
-    private final Boolean readOnly;
-    private final Boolean runtimeOnly;
-    private final Boolean global;
-    private final Boolean hasParams;
-    private final Boolean hasReturnValue;
-    private final String sort;
-    private final String order;
-    private final int limit;
-    private final int offset;
-
-    private CatalogFilter(String q, List<String> types, List<String> stabilities,
-            String deprecated, String scope,
-            Boolean singleton, String declaresCap, Boolean definesAttrGroups,
-            List<String> dataTypes, List<String> accessTypes, List<String> storageValues,
-            List<String> restartValues, Boolean required, Boolean nillable, Boolean expressions,
-            List<String> units, Boolean hasAllowed,
-            Boolean sensitive, Boolean hasRelationships, String refsCap,
-            Boolean readOnly, Boolean runtimeOnly, Boolean global,
-            Boolean hasParams, Boolean hasReturnValue,
-            String sort, String order, int limit, int offset) {
-        this.q = q;
-        this.types = types;
-        this.stabilities = stabilities;
-        this.deprecated = deprecated;
-        this.scope = scope;
-        this.singleton = singleton;
-        this.declaresCap = declaresCap;
-        this.definesAttrGroups = definesAttrGroups;
-        this.dataTypes = dataTypes;
-        this.accessTypes = accessTypes;
-        this.storageValues = storageValues;
-        this.restartValues = restartValues;
-        this.required = required;
-        this.nillable = nillable;
-        this.expressions = expressions;
-        this.units = units;
-        this.hasAllowed = hasAllowed;
-        this.sensitive = sensitive;
-        this.hasRelationships = hasRelationships;
-        this.refsCap = refsCap;
-        this.readOnly = readOnly;
-        this.runtimeOnly = runtimeOnly;
-        this.global = global;
-        this.hasParams = hasParams;
-        this.hasReturnValue = hasReturnValue;
-        this.sort = sort;
-        this.order = order;
-        this.limit = limit;
-        this.offset = offset;
-    }
 
     public static CatalogFilter of(String q, String type, String stability, String deprecated,
             String scope,
@@ -125,121 +85,7 @@ public final class CatalogFilter {
                 effectiveSort, effectiveOrder, effectiveLimit, effectiveOffset);
     }
 
-    public String q() {
-        return q;
-    }
-
-    public List<String> types() {
-        return types;
-    }
-
-    public List<String> stabilities() {
-        return stabilities;
-    }
-
-    public String deprecated() {
-        return deprecated;
-    }
-
-    public String scope() {
-        return scope;
-    }
-
-    public Boolean singleton() {
-        return singleton;
-    }
-
-    public String declaresCap() {
-        return declaresCap;
-    }
-
-    public Boolean definesAttrGroups() {
-        return definesAttrGroups;
-    }
-
-    public List<String> dataTypes() {
-        return dataTypes;
-    }
-
-    public List<String> accessTypes() {
-        return accessTypes;
-    }
-
-    public List<String> storageValues() {
-        return storageValues;
-    }
-
-    public List<String> restartValues() {
-        return restartValues;
-    }
-
-    public Boolean required() {
-        return required;
-    }
-
-    public Boolean nillable() {
-        return nillable;
-    }
-
-    public Boolean expressions() {
-        return expressions;
-    }
-
-    public List<String> units() {
-        return units;
-    }
-
-    public Boolean hasAllowed() {
-        return hasAllowed;
-    }
-
-    public Boolean sensitive() {
-        return sensitive;
-    }
-
-    public Boolean hasRelationships() {
-        return hasRelationships;
-    }
-
-    public String refsCap() {
-        return refsCap;
-    }
-
-    public Boolean readOnly() {
-        return readOnly;
-    }
-
-    public Boolean runtimeOnly() {
-        return runtimeOnly;
-    }
-
-    public Boolean global() {
-        return global;
-    }
-
-    public Boolean hasParams() {
-        return hasParams;
-    }
-
-    public Boolean hasReturnValue() {
-        return hasReturnValue;
-    }
-
-    public String sort() {
-        return sort;
-    }
-
-    public String order() {
-        return order;
-    }
-
-    public int limit() {
-        return limit;
-    }
-
-    public int offset() {
-        return offset;
-    }
+    // ------------------------------------------------------ api
 
     public boolean hasSearchQuery() {
         return q != null;
@@ -393,7 +239,9 @@ public final class CatalogFilter {
         return !hasTypeFilter() || types.contains(catalogType.label());
     }
 
-    static List<String> parseMultiValue(String value) {
+    // ------------------------------------------------------ internal
+
+    private static List<String> parseMultiValue(String value) {
         if (value == null || value.isBlank()) {
             return List.of();
         }
