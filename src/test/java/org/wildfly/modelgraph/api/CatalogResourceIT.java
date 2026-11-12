@@ -385,7 +385,7 @@ class CatalogResourceIT {
     // ------------------------------------------------------ sort and order
 
     @Test
-    void defaultSortIsNameAscending() {
+    void defaultSortIsAddressAscendingForResources() {
         var response = given()
                 .queryParam("type", "resource")
                 .queryParam("limit", 10)
@@ -395,10 +395,10 @@ class CatalogResourceIT {
                 .body("results", not(empty()))
                 .extract().jsonPath();
 
-        List<String> names = response.getList("results.name");
-        for (int i = 1; i < names.size(); i++) {
-            assertThat("Results should be sorted by name ascending",
-                    names.get(i).compareTo(names.get(i - 1)), greaterThanOrEqualTo(0));
+        List<String> addresses = response.getList("results.address");
+        for (int i = 1; i < addresses.size(); i++) {
+            assertThat("Results should be sorted by address ascending",
+                    addresses.get(i).compareTo(addresses.get(i - 1)), greaterThanOrEqualTo(0));
         }
     }
 
