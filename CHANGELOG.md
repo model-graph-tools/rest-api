@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add `GET /api/capability/{name}` detail endpoint returning capability properties, declaring resources, and referencing attributes with OpenAPI annotations
+- Add `GET /api/resource?address=...` detail endpoint returning resource properties, deprecation with reason, parent address, child resources, attributes, operations, and capabilities
+- Add `GET /api/attribute?resource=...&name=...` detail endpoint returning all attribute properties, deprecation, sensitivity, capability reference, required/alternative siblings, and sub-attributes
+- Add `GET /api/operation?resource=...&name=...` detail endpoint returning all operation properties, deprecation, full parameters with defaults and allowed values, and return value
+
+### Changed
+- Default catalog sort to address when type is resource
+- Convert `CatalogFilter` from class to record
+
+### Fixed
+- Fix `hasAllowed` facet by using correct Neo4j property name
+
 ## [0.3.3] - 2026-10-27
 
 ### Fixed
