@@ -316,7 +316,7 @@ public class CatalogRepository {
             nodeVar = "a";
         }
         query.append("\nRETURN CASE WHEN ").append(nodeVar)
-                .append(".`allowed-values` IS NOT NULL THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+                .append(".`allowed` IS NOT NULL THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
@@ -774,9 +774,9 @@ public class CatalogRepository {
         }
         if (filter.hasHasAllowedFilter()) {
             if (Boolean.TRUE.equals(filter.hasAllowed())) {
-                sb.append(" AND ").append(nodeVar).append(".`allowed-values` IS NOT NULL");
+                sb.append(" AND ").append(nodeVar).append(".`allowed` IS NOT NULL");
             } else {
-                sb.append(" AND ").append(nodeVar).append(".`allowed-values` IS NULL");
+                sb.append(" AND ").append(nodeVar).append(".`allowed` IS NULL");
             }
         }
         appendSensitiveWhere(sb, nodeVar, filter);
@@ -812,9 +812,9 @@ public class CatalogRepository {
         }
         if (filter.hasHasAllowedFilter() && !"hasAllowed".equals(excludeFacet)) {
             if (Boolean.TRUE.equals(filter.hasAllowed())) {
-                sb.append(" AND ").append(nodeVar).append(".`allowed-values` IS NOT NULL");
+                sb.append(" AND ").append(nodeVar).append(".`allowed` IS NOT NULL");
             } else {
-                sb.append(" AND ").append(nodeVar).append(".`allowed-values` IS NULL");
+                sb.append(" AND ").append(nodeVar).append(".`allowed` IS NULL");
             }
         }
         if (!"sensitive".equals(excludeFacet)) {
