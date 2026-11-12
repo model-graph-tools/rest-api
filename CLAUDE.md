@@ -83,3 +83,17 @@ Inside the container, nginx proxies `/api/*` to the Quarkus process on port 8080
 - **Java/Quarkus** chosen over Rust and TypeScript for driver maturity (official Neo4j Java driver), language alignment with the analyzer and halOP, and the Quarkus neo4j extension's out-of-the-box CDI/health/native-image support.
 - **Embedded in MGT container** (not sidecar) because the container already runs nginx + Neo4j. This avoids new ports, solves CORS via same-origin nginx proxying, and requires zero UX changes to `mgt start/stop/ps`.
 - **Independent from the MCP server** — both query Neo4j directly. The MCP server serves AI agents, this API serves halOP. No coupling between them.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default label vocabulary (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout: `GLOSSARY.md` and `docs/adr/` at repo root. See `docs/agents/domain.md`.
