@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `GET /api/resource?address=...` detail endpoint returning resource properties, deprecation with reason, parent address, child resources, attributes, operations, and capabilities
 - Add `GET /api/attribute?resource=...&name=...` detail endpoint returning all attribute properties, deprecation, sensitivity, capability reference, required/alternative siblings, and sub-attributes
 - Add `GET /api/operation?resource=...&name=...` detail endpoint returning all operation properties, deprecation, full parameters with defaults and allowed values, and return value
+- Add OpenAPI `@Operation`, `@APIResponse`, `@Parameter`, and `@Schema` annotations to all endpoints and response records
 
 ### Changed
 - Default catalog sort to address when type is resource
