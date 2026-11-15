@@ -27,6 +27,9 @@ Thumbs.db
 *.tar.gz
 *.rar
 
+# Generated API docs
+src/docs/api/openapi.yaml
+
 # Log files
 *.log
 hs_err_pid*
