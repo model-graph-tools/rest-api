@@ -5,6 +5,15 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 env:
   MVN: ./mvnw --show-version --batch-mode --no-transfer-progress
 
@@ -12,8 +21,6 @@ jobs:
   create-release:
     name: Create GitHub release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     outputs:
       version: ${{ steps.get-version.outputs.version }}
     steps:
@@ -36,8 +43,6 @@ jobs:
     name: Build and upload linux-amd64
     needs: create-release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: graalvm/setup-graalvm@v1
@@ -62,8 +67,6 @@ jobs:
     name: Build and upload linux-arm64
     needs: create-release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-qemu-action@v4
@@ -88,3 +91,25 @@ jobs:
       - uses: softprops/action-gh-release@v3
         with:
           files: target/${{ github.event.repository.name }}-${{ needs.create-release.outputs.version }}-linux-arm64
+
+  deploy-api-docs:
+    name: Deploy API docs
+    needs: create-release
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          java-version: 25
+          distribution: temurin
+          cache: maven
+      - run: $MVN package -DskipTests
+      - run: cp target/openapi.yaml src/docs/api/openapi.yaml
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: src/docs/api
+      - id: deployment
+        uses: actions/deploy-pages@v4
