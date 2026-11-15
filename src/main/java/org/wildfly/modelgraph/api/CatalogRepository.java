@@ -55,103 +55,70 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ facets
 
-    public Map<String, Map<String, Long>> facetCounts(CatalogQuery filter) {
-        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
-        facets.put("type", typeFacetCounts(filter));
-        facets.put("stability", stabilityFacetCounts(filter));
-        facets.put("deprecated", deprecatedFacetCounts(filter));
-
+    public CatalogFacets facetCounts(CatalogQuery filter) {
         Set<String> applicable = applicableFacets(filter);
 
-        // Resource-specific facets
-        if (applicable.contains("singleton")) {
-            facets.put("singleton", singletonFacetCounts(filter));
-        }
-        if (applicable.contains("declaresCap")) {
-            facets.put("declaresCap", declaresCapFacetCounts(filter));
-        }
-        if (applicable.contains("definesAttrGroups")) {
-            facets.put("definesAttrGroups", definesAttrGroupsFacetCounts(filter));
-        }
-
-        // Attribute-specific facets
-        if (applicable.contains("dataType")) {
-            facets.put("dataType", dataTypeFacetCounts(filter));
-        }
+        // Attribute-specific: accessType, storage, restart need default keys
+        Map<String, Long> accessTypeCounts = null;
         if (applicable.contains("accessType")) {
-            Map<String, Long> accessTypeCounts = multiValueAttributeFacetCounts(filter, "accessType",
+            accessTypeCounts = multiValueAttributeFacetCounts(filter, "accessType",
                     "toLower(a.`access-type`)", "accessTypes");
             accessTypeCounts.putIfAbsent("read-write", 0L);
             accessTypeCounts.putIfAbsent("read-only", 0L);
             accessTypeCounts.putIfAbsent("metric", 0L);
-            facets.put("accessType", accessTypeCounts);
         }
+        Map<String, Long> storageCounts = null;
         if (applicable.contains("storage")) {
-            Map<String, Long> storageCounts = multiValueAttributeFacetCounts(filter, "storage",
+            storageCounts = multiValueAttributeFacetCounts(filter, "storage",
                     "toLower(a.storage)", "storageValues");
             storageCounts.putIfAbsent("configuration", 0L);
             storageCounts.putIfAbsent("runtime", 0L);
-            facets.put("storage", storageCounts);
         }
+        Map<String, Long> restartCounts = null;
         if (applicable.contains("restart")) {
-            Map<String, Long> restartCounts = multiValueAttributeFacetCounts(filter, "restart",
+            restartCounts = multiValueAttributeFacetCounts(filter, "restart",
                     "toLower(a.`restart-required`)", "restartValues");
             restartCounts.putIfAbsent("no-services", 0L);
             restartCounts.putIfAbsent("all-services", 0L);
             restartCounts.putIfAbsent("resource-services", 0L);
             restartCounts.putIfAbsent("jvm", 0L);
-            facets.put("restart", restartCounts);
-        }
-        if (applicable.contains("required")) {
-            facets.put("required", booleanAttributeFacetCounts(filter, "required",
-                    "a.required"));
-        }
-        if (applicable.contains("nillable")) {
-            facets.put("nillable", booleanAttributeFacetCounts(filter, "nillable",
-                    "a.nillable"));
-        }
-        if (applicable.contains("expressions")) {
-            facets.put("expressions", booleanAttributeFacetCounts(filter, "expressions",
-                    "a.`expressions-allowed`"));
-        }
-        if (applicable.contains("unit")) {
-            facets.put("unit", multiValueAttributeFacetCounts(filter, "unit",
-                    "toLower(a.unit)", "units"));
-        }
-        if (applicable.contains("hasAllowed")) {
-            facets.put("hasAllowed", hasAllowedFacetCounts(filter));
-        }
-        if (applicable.contains("sensitive")) {
-            facets.put("sensitive", sensitiveFacetCounts(filter));
-        }
-        if (applicable.contains("hasRequires")) {
-            facets.put("hasRequires", hasRequiresFacetCounts(filter));
-        }
-        if (applicable.contains("hasAlternatives")) {
-            facets.put("hasAlternatives", hasAlternativesFacetCounts(filter));
-        }
-        if (applicable.contains("refsCap")) {
-            facets.put("refsCap", refsCapFacetCounts(filter));
         }
 
-        // Operation-specific facets
-        if (applicable.contains("readOnly")) {
-            facets.put("readOnly", booleanOperationFacetCounts(filter, "readOnly", "`read-only`"));
-        }
-        if (applicable.contains("runtimeOnly")) {
-            facets.put("runtimeOnly", booleanOperationFacetCounts(filter, "runtimeOnly", "`runtime-only`"));
-        }
-        if (applicable.contains("global")) {
-            facets.put("global", booleanOperationFacetCounts(filter, "global", "global"));
-        }
-        if (applicable.contains("hasParams")) {
-            facets.put("hasParams", hasParamsFacetCounts(filter));
-        }
-        if (applicable.contains("hasReturnValue")) {
-            facets.put("hasReturnValue", hasReturnValueFacetCounts(filter));
-        }
-
-        return facets;
+        return new CatalogFacets(
+                typeFacetCounts(filter),
+                stabilityFacetCounts(filter),
+                deprecatedFacetCounts(filter),
+                applicable.contains("singleton") ? singletonFacetCounts(filter) : null,
+                applicable.contains("declaresCap") ? declaresCapFacetCounts(filter) : null,
+                applicable.contains("definesAttrGroups") ? definesAttrGroupsFacetCounts(filter) : null,
+                applicable.contains("dataType") ? dataTypeFacetCounts(filter) : null,
+                accessTypeCounts,
+                storageCounts,
+                restartCounts,
+                applicable.contains("required") ? booleanAttributeFacetCounts(filter, "required", "a.required") : null,
+                applicable.contains("nillable") ? booleanAttributeFacetCounts(filter, "nillable", "a.nillable") : null,
+                applicable.contains("expressions")
+                        ? booleanAttributeFacetCounts(filter, "expressions", "a.`expressions-allowed`")
+                        : null,
+                applicable.contains("unit")
+                        ? multiValueAttributeFacetCounts(filter, "unit", "toLower(a.unit)", "units")
+                        : null,
+                applicable.contains("hasAllowed") ? hasAllowedFacetCounts(filter) : null,
+                applicable.contains("sensitive") ? sensitiveFacetCounts(filter) : null,
+                applicable.contains("hasRequires") ? hasRequiresFacetCounts(filter) : null,
+                applicable.contains("hasAlternatives") ? hasAlternativesFacetCounts(filter) : null,
+                applicable.contains("refsCap") ? refsCapFacetCounts(filter) : null,
+                applicable.contains("readOnly")
+                        ? booleanOperationFacetCounts(filter, "readOnly", "`read-only`")
+                        : null,
+                applicable.contains("runtimeOnly")
+                        ? booleanOperationFacetCounts(filter, "runtimeOnly", "`runtime-only`")
+                        : null,
+                applicable.contains("global")
+                        ? booleanOperationFacetCounts(filter, "global", "global")
+                        : null,
+                applicable.contains("hasParams") ? hasParamsFacetCounts(filter) : null,
+                applicable.contains("hasReturnValue") ? hasReturnValueFacetCounts(filter) : null);
     }
 
     private Map<String, Long> typeFacetCounts(CatalogQuery filter) {

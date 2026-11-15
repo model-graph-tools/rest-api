@@ -31,10 +31,10 @@ class CatalogResourceTest {
                         "/subsystem=io/buffer-pool=*", "default", false,
                         new AttributeProperties("boolean", "read-write", "configuration", "all-services",
                                 false, true, true, false, null, null)));
-        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
-        facets.put("type", Map.of("resource", 10L, "attribute", 20L, "operation", 5L, "capability", 3L));
-        facets.put("stability", Map.of("default", 30L, "community", 5L, "preview", 3L));
-        facets.put("deprecated", Map.of("true", 2L, "false", 36L));
+        CatalogFacets facets = CatalogFacets.commonOnly(
+                Map.of("resource", 10L, "attribute", 20L, "operation", 5L, "capability", 3L),
+                Map.of("default", 30L, "community", 5L, "preview", 3L),
+                Map.of("true", 2L, "false", 36L));
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(38);
@@ -64,10 +64,10 @@ class CatalogResourceTest {
         List<CatalogResult> results = List.of(
                 new CatalogResult("resource", "buffer-pool", "A buffer pool", "/subsystem=io/buffer-pool=*",
                         null, "default", false, null));
-        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
-        facets.put("type", Map.of("resource", 10L));
-        facets.put("stability", Map.of("default", 10L));
-        facets.put("deprecated", Map.of("true", 0L, "false", 10L));
+        CatalogFacets facets = CatalogFacets.commonOnly(
+                Map.of("resource", 10L),
+                Map.of("default", 10L),
+                Map.of("true", 0L, "false", 10L));
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(10);
@@ -86,7 +86,7 @@ class CatalogResourceTest {
     void defaultPaginationValues() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .when().get("/api/catalog")
@@ -100,7 +100,7 @@ class CatalogResourceTest {
     void singletonFilterPassesToRepository() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .queryParam("singleton", true)
@@ -116,7 +116,7 @@ class CatalogResourceTest {
     void declaresCapFilterPassesToRepository() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .queryParam("declaresCap", "contains:io")
@@ -133,9 +133,10 @@ class CatalogResourceTest {
         List<CatalogResult> results = List.of(
                 new CatalogResult("resource", "buffer-pool", "A buffer pool", "/subsystem=io/buffer-pool=*",
                         null, "default", false, new ResourceProperties(true, List.of(), true)));
-        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
-        facets.put("type", Map.of("resource", 1L));
-        facets.put("stability", Map.of("default", 1L));
+        CatalogFacets facets = CatalogFacets.commonOnly(
+                Map.of("resource", 1L),
+                Map.of("default", 1L),
+                Map.of());
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(1);
@@ -155,7 +156,7 @@ class CatalogResourceTest {
     void customPaginationValues() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .queryParam("limit", 25)
@@ -171,7 +172,7 @@ class CatalogResourceTest {
     void searchQueryPassesToRepository() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .queryParam("q", "pool")
@@ -190,7 +191,7 @@ class CatalogResourceTest {
     void deprecatedFilterPassesToRepository() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .queryParam("deprecated", "true")
@@ -209,7 +210,7 @@ class CatalogResourceTest {
     void scopeFilterPassesToRepository() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .queryParam("scope", "/subsystem=io")
@@ -228,7 +229,7 @@ class CatalogResourceTest {
     void sortOrderDefaults() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .when().get("/api/catalog")
@@ -246,7 +247,7 @@ class CatalogResourceTest {
     void sortOrderWithSearchQueryDefaultsToScore() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .queryParam("q", "pool")
@@ -264,7 +265,7 @@ class CatalogResourceTest {
     void explicitSortOverridesSearchDefault() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .queryParam("q", "pool")
@@ -290,9 +291,11 @@ class CatalogResourceTest {
                         "/subsystem=io/buffer-pool=*", "default", false,
                         new AttributeProperties("boolean", "read-write", "configuration", "all-services",
                                 false, true, true, false, null, null)));
-        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
-        facets.put("type", Map.of("attribute", 2L));
-        facets.put("dataType", Map.of("int", 1L, "boolean", 1L));
+        CatalogFacets facets = new CatalogFacets(
+                Map.of("attribute", 2L), Map.of(), Map.of(),
+                null, null, null,
+                Map.of("int", 1L, "boolean", 1L), null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null);
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(2);
@@ -315,9 +318,11 @@ class CatalogResourceTest {
                         "/subsystem=datasources/data-source=*", "default", false,
                         new AttributeProperties("string", "read-write", "configuration", "all-services",
                                 true, false, true, false, null, null)));
-        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
-        facets.put("type", Map.of("attribute", 1L));
-        facets.put("required", Map.of("yes", 1L, "no", 0L));
+        CatalogFacets facets = new CatalogFacets(
+                Map.of("attribute", 1L), Map.of(), Map.of(),
+                null, null, null,
+                null, null, null, null, Map.of("yes", 1L, "no", 0L), null, null, null, null, null, null, null, null,
+                null, null, null, null, null);
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(1);
@@ -341,9 +346,11 @@ class CatalogResourceTest {
                         "/subsystem=io/buffer-pool=*/read-resource",
                         "/subsystem=io/buffer-pool=*", "default", false,
                         new OperationProperties(true, false, true, false, true)));
-        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
-        facets.put("type", Map.of("operation", 5L));
-        facets.put("readOnly", Map.of("yes", 3L, "no", 2L));
+        CatalogFacets facets = new CatalogFacets(
+                Map.of("operation", 5L), Map.of(), Map.of(),
+                null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null, null,
+                Map.of("yes", 3L, "no", 2L), null, null, null, null);
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(5);
@@ -367,7 +374,7 @@ class CatalogResourceTest {
     void sensitiveFilterPassesToRepository() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .queryParam("sensitive", true)
@@ -383,7 +390,7 @@ class CatalogResourceTest {
     void refsCapFilterPassesToRepository() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
 
         given()
                 .queryParam("refsCap", "contains:io")
@@ -397,18 +404,18 @@ class CatalogResourceTest {
 
     @Test
     void zeroCountFacetValuesPreservedInResponse() {
-        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
-        facets.put("type", new LinkedHashMap<>(Map.of(
-                "resource", 10L, "attribute", 20L, "operation", 0L, "capability", 0L)));
-        facets.put("stability", new LinkedHashMap<>(Map.of(
-                "default", 30L, "community", 0L, "preview", 0L, "experimental", 0L)));
-        facets.put("deprecated", new LinkedHashMap<>(Map.of("true", 0L, "false", 30L)));
-        facets.put("dataType", new LinkedHashMap<>(Map.of(
-                "string", 10L, "int", 5L, "long", 0L, "boolean", 3L,
-                "double", 0L, "big-decimal", 0L, "list", 0L, "object", 2L)));
-        facets.put("accessType", new LinkedHashMap<>(Map.of(
-                "read-write", 15L, "read-only", 5L, "metric", 0L)));
-        facets.put("required", new LinkedHashMap<>(Map.of("yes", 5L, "no", 25L)));
+        CatalogFacets facets = new CatalogFacets(
+                new LinkedHashMap<>(Map.of("resource", 10L, "attribute", 20L, "operation", 0L, "capability", 0L)),
+                new LinkedHashMap<>(Map.of("default", 30L, "community", 0L, "preview", 0L, "experimental", 0L)),
+                new LinkedHashMap<>(Map.of("true", 0L, "false", 30L)),
+                null, null, null,
+                new LinkedHashMap<>(Map.of("string", 10L, "int", 5L, "long", 0L, "boolean", 3L,
+                        "double", 0L, "big-decimal", 0L, "list", 0L, "object", 2L)),
+                new LinkedHashMap<>(Map.of("read-write", 15L, "read-only", 5L, "metric", 0L)),
+                null, null,
+                new LinkedHashMap<>(Map.of("yes", 5L, "no", 25L)),
+                null, null, null, null, null, null, null, null,
+                null, null, null, null, null);
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(30);
@@ -437,9 +444,11 @@ class CatalogResourceTest {
                         "/subsystem=io/buffer-pool=*/add",
                         "/subsystem=io/buffer-pool=*", "default", false,
                         new OperationProperties(false, false, false, true, false)));
-        Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
-        facets.put("type", Map.of("operation", 3L));
-        facets.put("hasParams", Map.of("yes", 2L, "no", 1L));
+        CatalogFacets facets = new CatalogFacets(
+                Map.of("operation", 3L), Map.of(), Map.of(),
+                null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, Map.of("yes", 2L, "no", 1L), null);
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(3);
