@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add javadoc to all public classes and `package-info.java` for all 9 packages
+- Add unit tests for `CatalogQuery` input parsing and validation (80 tests)
+- Add unit tests for `CatalogRepository` query building and parameter construction (34 tests)
+- Add Cypher injection prevention tests verifying sort, order, and type allowlists reject malicious input
+
+### Changed
+- **BREAKING:** Change deprecated catalog filter from `yes`/`no` string to `Boolean`, aligning with all other boolean filters (facet keys change from `yes`/`no` to `true`/`false`)
+- Reorganize endpoints into per-feature packages: `search`, `catalog`, `capability`, `attribute`, `operation`, `resource`, `version`, `identity`
+- Split `ModelGraphRepository` into per-endpoint repositories (`SearchRepository`, `CatalogRepository`, `CapabilityRepository`, `AttributeRepository`, `OperationRepository`, `ResourceRepository`, `IdentityRepository`)
+- Extract shared Lucene utilities into `LuceneUtils` class
+- Cache compiled regex pattern in `LuceneUtils` for boolean operator neutralization
+
+### Fixed
+- Cap search endpoint `limit` parameter at 100 to prevent unbounded result sets
+- Remove duplicate `SEARCH_INDEX` constant in `CatalogRepository` (now uses shared `LuceneUtils.SEARCH_INDEX`)
+
+### Security
+- Add defense-in-depth `SAFE_SORT_FIELDS` and `SAFE_ORDER_DIRECTIONS` allowlists in `CatalogRepository.appendOrderBy()` to prevent Cypher injection even if `CatalogQuery` validation is bypassed
+
 ## [0.4.0] - 2026-11-12
 
 ### Added

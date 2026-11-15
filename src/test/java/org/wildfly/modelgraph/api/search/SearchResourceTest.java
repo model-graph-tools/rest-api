@@ -1,0 +1,123 @@
+package org.wildfly.modelgraph.api.search;
+
+import java.util.List;
+
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+
+@QuarkusTest
+class SearchResourceTest {
+
+    @InjectMock
+    SearchRepository repository;
+
+    @Test
+    void searchReturnsResults() {
+        Mockito.when(repository.search("pool", 10)).thenReturn(List.of(
+                new SearchResult("resource", "buffer-pool", null, "Defines buffer pool",
+                        "/subsystem=io/buffer-pool=*", "default", false),
+                new SearchResult("attribute", "buffer-pool", null, "The listeners buffer pool",
+                        "/subsystem=undertow/server=*/http-listener=*", "default", false)));
+
+        given()
+                .queryParam("q", "pool")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results", hasSize(2))
+                .body("results[0].type", is("resource"))
+                .body("results[0].name", is("buffer-pool"))
+                .body("results[0].address", is("/subsystem=io/buffer-pool=*"))
+                .body("results[0].stability", is("default"))
+                .body("results[0].singleton", is(false))
+                .body("results[1].type", is("attribute"))
+                .body("results[1].name", is("buffer-pool"))
+                .body("results[1].stability", is("default"));
+    }
+
+    @Test
+    void searchWithCustomLimit() {
+        Mockito.when(repository.search("pool", 5)).thenReturn(List.of(
+                new SearchResult("resource", "buffer-pool", null, "Defines buffer pool",
+                        "/subsystem=io/buffer-pool=*", "default", false)));
+
+        given()
+                .queryParam("q", "pool")
+                .queryParam("limit", 5)
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results", hasSize(1));
+    }
+
+    @Test
+    void searchWithoutQueryReturnsBadRequest() {
+        given()
+                .when().get("/api/search")
+                .then()
+                .statusCode(400)
+                .body("error", is("Query parameter 'q' is required"));
+    }
+
+    @Test
+    void searchWithBlankQueryReturnsBadRequest() {
+        given()
+                .queryParam("q", "   ")
+                .when().get("/api/search")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void searchCapabilityIncludesResources() {
+        Mockito.when(repository.search("io.buffer-pool", 10)).thenReturn(List.of(
+                new SearchResult("capability", "org.wildfly.io.buffer-pool",
+                        List.of(new ResourceRef("buffer-pool", "/subsystem=io/buffer-pool=*")),
+                        null, null, "default", null)));
+
+        given()
+                .queryParam("q", "io.buffer-pool")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results", hasSize(1))
+                .body("results[0].type", is("capability"))
+                .body("results[0].name", is("org.wildfly.io.buffer-pool"))
+                .body("results[0].address", nullValue())
+                .body("results[0].singleton", nullValue())
+                .body("results[0].providedBy", hasSize(1))
+                .body("results[0].providedBy[0].name", is("buffer-pool"))
+                .body("results[0].providedBy[0].address", is("/subsystem=io/buffer-pool=*"));
+    }
+
+    @Test
+    void searchCapabilityWithoutResourcesOmitsField() {
+        Mockito.when(repository.search("some-cap", 10)).thenReturn(List.of(
+                new SearchResult("capability", "some.capability", null, null, null, "default", null)));
+
+        given()
+                .queryParam("q", "some-cap")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results[0].providedBy", nullValue());
+    }
+
+    @Test
+    void searchWithEmptyResultsReturnsEmptyList() {
+        Mockito.when(repository.search("nonexistent", 10)).thenReturn(List.of());
+
+
+        given()
+                .queryParam("q", "nonexistent")
+                .when().get("/api/search")
+                .then()
+                .statusCode(200)
+                .body("results", hasSize(0));
+    }
+}
