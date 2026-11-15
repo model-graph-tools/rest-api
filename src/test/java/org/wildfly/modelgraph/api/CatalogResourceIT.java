@@ -325,7 +325,7 @@ class CatalogResourceIT {
     @Test
     void deprecatedNoExcludesDeprecatedElements() {
         var response = given()
-                .queryParam("deprecated", "no")
+                .queryParam("deprecated", "false")
                 .when().get("/api/catalog")
                 .then()
                 .statusCode(200)
@@ -346,8 +346,8 @@ class CatalogResourceIT {
                 .extract().jsonPath();
 
         Map<String, Object> deprecatedFacet = response.getMap("facets.deprecated");
-        assertThat("deprecated facet should have 'yes' key", deprecatedFacet, hasKey("yes"));
-        assertThat("deprecated facet should have 'no' key", deprecatedFacet, hasKey("no"));
+        assertThat("deprecated facet should have 'true' key", deprecatedFacet, hasKey("true"));
+        assertThat("deprecated facet should have 'false' key", deprecatedFacet, hasKey("false"));
     }
 
     @Test
@@ -358,11 +358,11 @@ class CatalogResourceIT {
                 .statusCode(200)
                 .extract().jsonPath();
 
-        int yesCount = response.getInt("facets.deprecated.yes");
-        int noCount = response.getInt("facets.deprecated.no");
-        assertThat("deprecated 'yes' count should be > 0", yesCount, greaterThan(0));
-        assertThat("deprecated 'no' count should be > 0", noCount, greaterThan(0));
-        assertThat("deprecated counts should sum to total", yesCount + noCount, is(response.getInt("total")));
+        int trueCount = response.getInt("facets.deprecated.true");
+        int falseCount = response.getInt("facets.deprecated.false");
+        assertThat("deprecated 'true' count should be > 0", trueCount, greaterThan(0));
+        assertThat("deprecated 'false' count should be > 0", falseCount, greaterThan(0));
+        assertThat("deprecated counts should sum to total", trueCount + falseCount, is(response.getInt("total")));
     }
 
     // ------------------------------------------------------ scope filter

@@ -56,10 +56,10 @@ public class CatalogResource {
 
             @Parameter(
                     name = "deprecated",
-                    description = "Deprecation status: 'yes' for only deprecated elements, 'no' for only non-deprecated elements",
-                    example = "no",
-                    schema = @Schema(type = SchemaType.STRING, enumeration = {"yes", "no"}))
-            @QueryParam("deprecated") String deprecated,
+                    description = "Deprecation filter: true for only deprecated elements, false for only non-deprecated elements",
+                    example = "true",
+                    schema = @Schema(type = SchemaType.BOOLEAN))
+            @QueryParam("deprecated") Boolean deprecated,
 
             @Parameter(
                     name = "scope",

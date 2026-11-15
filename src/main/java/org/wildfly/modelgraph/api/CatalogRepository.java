@@ -216,10 +216,10 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record -> {
                 boolean dep = record.get("deprecated").asBoolean(false);
-                counts.merge(dep ? "yes" : "no", record.get("count").asLong(), Long::sum);
+                counts.merge(dep ? "true" : "false", record.get("count").asLong(), Long::sum);
             });
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
@@ -575,7 +575,7 @@ public class CatalogRepository {
 
     private String capabilityBranch(CatalogFilter filter, boolean includesResource, boolean includesOperation) {
         StringBuilder sb = new StringBuilder();
-        if (filter.hasDeprecatedFilter() && "yes".equals(filter.deprecated())) {
+        if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
             sb.append("MATCH (c:Capability) WHERE false");
             sb.append("\nRETURN 'capability' AS type, c.name AS name, null AS description, ");
             sb.append("null AS address, null AS resourceAddress, toLower(c.stability) AS stability, ");
@@ -643,7 +643,7 @@ public class CatalogRepository {
 
     private void appendDeprecatedWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
         if (filter.hasDeprecatedFilter()) {
-            boolean wantDeprecated = "yes".equals(filter.deprecated());
+            boolean wantDeprecated = Boolean.TRUE.equals(filter.deprecated());
             if (wantDeprecated) {
                 sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:DEPRECATED_SINCE]->() }");
             } else {
@@ -980,7 +980,7 @@ public class CatalogRepository {
 
     private String capabilityTypeFacetBranch(CatalogFilter filter) {
         StringBuilder sb = new StringBuilder();
-        if (filter.hasDeprecatedFilter() && "yes".equals(filter.deprecated())) {
+        if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
             sb.append("MATCH (c:Capability) WHERE false\nRETURN 'capability' AS type");
             return sb.toString();
         }
@@ -1090,7 +1090,7 @@ public class CatalogRepository {
 
     private String capabilityStabilityFacetBranch(CatalogFilter filter) {
         StringBuilder sb = new StringBuilder();
-        if (filter.hasDeprecatedFilter() && "yes".equals(filter.deprecated())) {
+        if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
             sb.append("MATCH (c:Capability) WHERE false\nRETURN toLower(c.stability) AS stability");
             return sb.toString();
         }

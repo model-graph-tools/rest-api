@@ -34,7 +34,7 @@ class CatalogResourceTest {
         Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
         facets.put("type", Map.of("resource", 10L, "attribute", 20L, "operation", 5L, "capability", 3L));
         facets.put("stability", Map.of("default", 30L, "community", 5L, "preview", 3L));
-        facets.put("deprecated", Map.of("yes", 2L, "no", 36L));
+        facets.put("deprecated", Map.of("true", 2L, "false", 36L));
 
         Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(38);
@@ -52,8 +52,8 @@ class CatalogResourceTest {
                 .body("results[1].properties.accessType", is("read-write"))
                 .body("facets.type.resource", is(10))
                 .body("facets.stability.default", is(30))
-                .body("facets.deprecated.yes", is(2))
-                .body("facets.deprecated.no", is(36))
+                .body("facets.deprecated.true", is(2))
+                .body("facets.deprecated.false", is(36))
                 .body("total", is(38))
                 .body("limit", is(50))
                 .body("offset", is(0));
@@ -67,7 +67,7 @@ class CatalogResourceTest {
         Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
         facets.put("type", Map.of("resource", 10L));
         facets.put("stability", Map.of("default", 10L));
-        facets.put("deprecated", Map.of("yes", 0L, "no", 10L));
+        facets.put("deprecated", Map.of("true", 0L, "false", 10L));
 
         Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(10);
@@ -193,7 +193,7 @@ class CatalogResourceTest {
         Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
 
         given()
-                .queryParam("deprecated", "yes")
+                .queryParam("deprecated", "true")
                 .when().get("/api/catalog")
                 .then()
                 .statusCode(200);
@@ -202,7 +202,7 @@ class CatalogResourceTest {
         Mockito.verify(repository).search(captor.capture());
         CatalogFilter filter = captor.getValue();
         assertTrue(filter.hasDeprecatedFilter());
-        assertEquals("yes", filter.deprecated());
+        assertEquals(true, filter.deprecated());
     }
 
     @Test
@@ -402,7 +402,7 @@ class CatalogResourceTest {
                 "resource", 10L, "attribute", 20L, "operation", 0L, "capability", 0L)));
         facets.put("stability", new LinkedHashMap<>(Map.of(
                 "default", 30L, "community", 0L, "preview", 0L, "experimental", 0L)));
-        facets.put("deprecated", new LinkedHashMap<>(Map.of("yes", 0L, "no", 30L)));
+        facets.put("deprecated", new LinkedHashMap<>(Map.of("true", 0L, "false", 30L)));
         facets.put("dataType", new LinkedHashMap<>(Map.of(
                 "string", 10L, "int", 5L, "long", 0L, "boolean", 3L,
                 "double", 0L, "big-decimal", 0L, "list", 0L, "object", 2L)));
@@ -423,7 +423,7 @@ class CatalogResourceTest {
                 .body("facets.stability.community", is(0))
                 .body("facets.stability.preview", is(0))
                 .body("facets.stability.experimental", is(0))
-                .body("facets.deprecated.yes", is(0))
+                .body("facets.deprecated.true", is(0))
                 .body("facets.dataType.long", is(0))
                 .body("facets.dataType.double", is(0))
                 .body("facets.accessType.metric", is(0))

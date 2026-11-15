@@ -8,7 +8,7 @@ public record CatalogFilter(
         String q,
         List<String> types,
         List<String> stabilities,
-        String deprecated,
+        Boolean deprecated,
         String scope,
         Boolean singleton,
         String declaresCap,
@@ -45,7 +45,7 @@ public record CatalogFilter(
     private static final String DEFAULT_ORDER = "asc";
     private static final Set<String> VALID_TYPES = Set.of("resource", "attribute", "operation", "capability");
 
-    public static CatalogFilter of(String q, String type, String stability, String deprecated,
+    public static CatalogFilter of(String q, String type, String stability, Boolean deprecated,
             String scope,
             Boolean singleton, String declaresCap, Boolean definesAttrGroups,
             String dataType, String accessType, String storage, String restart,
@@ -60,7 +60,6 @@ public record CatalogFilter(
                 .filter(VALID_TYPES::contains)
                 .toList();
         List<String> stabilities = parseMultiValue(stability);
-        String effectiveDeprecated = parseDeprecated(deprecated);
         String effectiveScope = (scope != null && !scope.isBlank()) ? scope.strip() : null;
         String effectiveDeclaresCap = (declaresCap != null && !declaresCap.isBlank())
                 ? declaresCap.strip().toLowerCase()
@@ -77,7 +76,7 @@ public record CatalogFilter(
         String effectiveOrder = parseOrder(order);
         int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, MAX_LIMIT) : DEFAULT_LIMIT;
         int effectiveOffset = (offset != null && offset >= 0) ? offset : DEFAULT_OFFSET;
-        return new CatalogFilter(effectiveQ, types, stabilities, effectiveDeprecated, effectiveScope,
+        return new CatalogFilter(effectiveQ, types, stabilities, deprecated, effectiveScope,
                 singleton, effectiveDeclaresCap, definesAttrGroups,
                 dataTypes, accessTypes, storageValues, restartValues, required, nillable,
                 expressions, units, hasAllowed,
@@ -256,17 +255,6 @@ public record CatalogFilter(
                 .map(String::toLowerCase)
                 .filter(s -> !s.isEmpty())
                 .toList();
-    }
-
-    private static String parseDeprecated(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        String lower = value.strip().toLowerCase();
-        if ("yes".equals(lower) || "no".equals(lower)) {
-            return lower;
-        }
-        return null;
     }
 
     private static String parseSort(String sort, String q, List<String> types) {
