@@ -81,6 +81,12 @@ The REST API is not published to any Maven repository — it is distributed sole
 
 Inside the container, nginx proxies `/api/*` to the Quarkus process on port 8080. No new ports are exposed — the API is reachable through the existing MGT HTTP port (e.g., `http://localhost:7410/api/search?q=pool`).
 
+## API Documentation
+
+The full API reference is published at [model-graph-tools.github.io/rest-api](https://model-graph-tools.github.io/rest-api/). It is generated from the OpenAPI annotations in the source code and deployed automatically on each push to `main`.
+
+During development, the interactive OpenAPI spec is also available at `http://localhost:8080/q/openapi` when running in dev mode.
+
 ## Related Projects
 
 - [model-graph-tools/analyzer](https://github.com/model-graph-tools/analyzer) — Java CLI that reads the WildFly model and writes it into Neo4j
