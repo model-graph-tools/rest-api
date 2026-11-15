@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-public record CatalogFilter(
+public record CatalogQuery(
         String q,
         List<String> types,
         List<String> stabilities,
@@ -45,7 +45,7 @@ public record CatalogFilter(
     private static final String DEFAULT_ORDER = "asc";
     private static final Set<String> VALID_TYPES = Set.of("resource", "attribute", "operation", "capability");
 
-    public static CatalogFilter of(String q, String type, String stability, Boolean deprecated,
+    public static CatalogQuery of(String q, String type, String stability, Boolean deprecated,
             String scope,
             Boolean singleton, String declaresCap, Boolean definesAttrGroups,
             String dataType, String accessType, String storage, String restart,
@@ -76,7 +76,7 @@ public record CatalogFilter(
         String effectiveOrder = parseOrder(order);
         int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, MAX_LIMIT) : DEFAULT_LIMIT;
         int effectiveOffset = (offset != null && offset >= 0) ? offset : DEFAULT_OFFSET;
-        return new CatalogFilter(effectiveQ, types, stabilities, deprecated, effectiveScope,
+        return new CatalogQuery(effectiveQ, types, stabilities, deprecated, effectiveScope,
                 singleton, effectiveDeclaresCap, definesAttrGroups,
                 dataTypes, accessTypes, storageValues, restartValues, required, nillable,
                 expressions, units, hasAllowed,

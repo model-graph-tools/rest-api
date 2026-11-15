@@ -243,7 +243,7 @@ public class CatalogResource {
                     schema = @Schema(type = SchemaType.INTEGER, defaultValue = "0"))
             @QueryParam("offset") Integer offset) {
 
-        CatalogFilter filter = CatalogFilter.of(q, type, stability, deprecated, scope,
+        CatalogQuery filter = CatalogQuery.of(q, type, stability, deprecated, scope,
                 singleton, declaresCap, definesAttrGroups,
                 dataType, accessType, storage, restart, required, nillable, expressions,
                 unit, hasAllowed,

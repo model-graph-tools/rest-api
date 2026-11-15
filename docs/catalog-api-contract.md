@@ -243,7 +243,7 @@ New classes (do not modify existing endpoints):
 - `CatalogRepository` — Neo4j queries, one per facet
 - `CatalogResponse`, `CatalogResult` — response DTOs
 - `AttributeProperties`, `OperationProperties`, `ResourceProperties` — sealed subtypes
-- `CatalogFilter` — query parameter parsing
+- `CatalogQuery` — query parameter parsing
 - `CatalogFacet` — facet count objects
 - `CatalogType` — enum with facet-to-type mapping
 

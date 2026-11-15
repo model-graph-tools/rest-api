@@ -29,7 +29,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ search
 
-    public List<CatalogResult> search(CatalogFilter filter) {
+    public List<CatalogResult> search(CatalogQuery filter) {
         String query = buildResultQuery(filter);
         Map<String, Object> params = buildParams(filter);
         LOG.debugf("Catalog search query: %s, params: %s", query, params);
@@ -39,7 +39,7 @@ public class CatalogRepository {
         }
     }
 
-    public int total(CatalogFilter filter) {
+    public int total(CatalogQuery filter) {
         String query = buildTotalQuery(filter);
         Map<String, Object> params = buildParams(filter);
         LOG.debugf("Catalog total query: %s, params: %s", query, params);
@@ -55,7 +55,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ facets
 
-    public Map<String, Map<String, Long>> facetCounts(CatalogFilter filter) {
+    public Map<String, Map<String, Long>> facetCounts(CatalogQuery filter) {
         Map<String, Map<String, Long>> facets = new LinkedHashMap<>();
         facets.put("type", typeFacetCounts(filter));
         facets.put("stability", stabilityFacetCounts(filter));
@@ -154,7 +154,7 @@ public class CatalogRepository {
         return facets;
     }
 
-    private Map<String, Long> typeFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> typeFacetCounts(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         query.append("CALL {\n");
         appendTypeFacetBranches(query, filter);
@@ -176,7 +176,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> stabilityFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> stabilityFacetCounts(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         query.append("CALL {\n");
         appendStabilityFacetBranches(query, filter);
@@ -202,7 +202,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> deprecatedFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> deprecatedFacetCounts(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         query.append("CALL {\n");
         appendDeprecatedFacetBranches(query, filter);
@@ -224,7 +224,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> multiValueAttributeFacetCounts(CatalogFilter filter,
+    private Map<String, Long> multiValueAttributeFacetCounts(CatalogQuery filter,
             String facetName, String cypherExpression, String paramName) {
         StringBuilder query = new StringBuilder();
         if (filter.hasSearchQuery()) {
@@ -259,7 +259,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> booleanAttributeFacetCounts(CatalogFilter filter,
+    private Map<String, Long> booleanAttributeFacetCounts(CatalogQuery filter,
             String facetName, String cypherExpression) {
         StringBuilder query = new StringBuilder();
         String expr;
@@ -297,7 +297,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> hasAllowedFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> hasAllowedFacetCounts(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         String nodeVar;
         if (filter.hasSearchQuery()) {
@@ -334,7 +334,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ query builders
 
-    String buildResultQuery(CatalogFilter filter) {
+    String buildResultQuery(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         query.append("CALL {\n");
         appendUnionBranches(query, filter);
@@ -359,7 +359,7 @@ public class CatalogRepository {
         return query.toString();
     }
 
-    String buildTotalQuery(CatalogFilter filter) {
+    String buildTotalQuery(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         query.append("CALL {\n");
         appendUnionBranches(query, filter);
@@ -370,7 +370,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ order by
 
-    private void appendOrderBy(StringBuilder query, CatalogFilter filter) {
+    private void appendOrderBy(StringBuilder query, CatalogQuery filter) {
         String sort = filter.sort();
         String dir = filter.order().toUpperCase();
 
@@ -386,22 +386,22 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ effective type includes
 
-    private boolean effectiveIncludesResource(CatalogFilter filter) {
+    private boolean effectiveIncludesResource(CatalogQuery filter) {
         return filter.includesType(CatalogType.RESOURCE)
                 && !filter.hasAnyAttributeFilter() && !filter.hasAnyOperationFilter();
     }
 
-    private boolean effectiveIncludesAttribute(CatalogFilter filter) {
+    private boolean effectiveIncludesAttribute(CatalogQuery filter) {
         return filter.includesType(CatalogType.ATTRIBUTE)
                 && !filter.hasAnyOperationFilter() && !filter.hasAnyResourceFilter();
     }
 
-    private boolean effectiveIncludesOperation(CatalogFilter filter) {
+    private boolean effectiveIncludesOperation(CatalogQuery filter) {
         return filter.includesType(CatalogType.OPERATION)
                 && !filter.hasAnyAttributeFilter() && !filter.hasAnyResourceFilter();
     }
 
-    private boolean effectiveIncludesCapability(CatalogFilter filter) {
+    private boolean effectiveIncludesCapability(CatalogQuery filter) {
         return filter.includesType(CatalogType.CAPABILITY)
                 && !filter.hasAnyAttributeFilter() && !filter.hasAnyOperationFilter()
                 && !filter.hasAnyResourceFilter();
@@ -409,7 +409,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ union branches
 
-    private void appendUnionBranches(StringBuilder query, CatalogFilter filter) {
+    private void appendUnionBranches(StringBuilder query, CatalogQuery filter) {
         List<String> branches = new ArrayList<>();
         boolean includesResource = effectiveIncludesResource(filter);
         boolean includesAttribute = effectiveIncludesAttribute(filter);
@@ -444,7 +444,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ result branches
 
-    private String resourceBranch(CatalogFilter filter, boolean includesOperation) {
+    private String resourceBranch(CatalogQuery filter, boolean includesOperation) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node, score\n");
@@ -486,7 +486,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String attributeBranch(CatalogFilter filter, boolean includesResource, boolean includesOperation) {
+    private String attributeBranch(CatalogQuery filter, boolean includesResource, boolean includesOperation) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node, score\n");
@@ -538,7 +538,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String operationBranch(CatalogFilter filter, boolean includesResource) {
+    private String operationBranch(CatalogQuery filter, boolean includesResource) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node, score\n");
@@ -573,7 +573,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String capabilityBranch(CatalogFilter filter, boolean includesResource, boolean includesOperation) {
+    private String capabilityBranch(CatalogQuery filter, boolean includesResource, boolean includesOperation) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
             sb.append("MATCH (c:Capability) WHERE false");
@@ -635,13 +635,13 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ where clause helpers
 
-    private void appendStabilityWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendStabilityWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (filter.hasStabilityFilter()) {
             sb.append(" AND toLower(").append(nodeVar).append(".stability) IN $stabilities");
         }
     }
 
-    private void appendDeprecatedWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendDeprecatedWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (filter.hasDeprecatedFilter()) {
             boolean wantDeprecated = Boolean.TRUE.equals(filter.deprecated());
             if (wantDeprecated) {
@@ -652,19 +652,19 @@ public class CatalogRepository {
         }
     }
 
-    private void appendScopeWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendScopeWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (filter.hasScopeFilter()) {
             sb.append(" AND ").append(nodeVar).append(".address STARTS WITH $scope");
         }
     }
 
-    private void appendSingletonWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendSingletonWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (filter.hasSingletonFilter()) {
             sb.append(" AND coalesce(").append(nodeVar).append(".singleton, false) = $singleton");
         }
     }
 
-    private void appendDeclaresCapWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendDeclaresCapWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (!filter.hasDeclaresCapFilter()) {
             return;
         }
@@ -681,7 +681,7 @@ public class CatalogRepository {
         }
     }
 
-    private void appendDefinesAttrGroupsWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendDefinesAttrGroupsWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (filter.hasDefinesAttrGroupsFilter()) {
             if (filter.definesAttrGroups()) {
                 sb.append(" AND EXISTS { (").append(nodeVar)
@@ -695,7 +695,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ relationship-based attribute where helpers
 
-    private void appendDataTypeFilter(StringBuilder sb, CatalogFilter filter, String nodeVar) {
+    private void appendDataTypeFilter(StringBuilder sb, CatalogQuery filter, String nodeVar) {
         if (!filter.hasDataTypeFilter()) {
             return;
         }
@@ -713,7 +713,7 @@ public class CatalogRepository {
         }
     }
 
-    private void appendSensitiveWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendSensitiveWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (filter.hasSensitiveFilter()) {
             if (filter.sensitive()) {
                 sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:IS_SENSITIVE]->() }");
@@ -723,7 +723,7 @@ public class CatalogRepository {
         }
     }
 
-    private void appendHasRequiresWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendHasRequiresWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (filter.hasHasRequiresFilter()) {
             if (filter.hasRequires()) {
                 sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:REQUIRES]->() }");
@@ -733,7 +733,7 @@ public class CatalogRepository {
         }
     }
 
-    private void appendHasAlternativesWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendHasAlternativesWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (filter.hasHasAlternativesFilter()) {
             if (filter.hasAlternatives()) {
                 sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:ALTERNATIVE]->() }");
@@ -743,7 +743,7 @@ public class CatalogRepository {
         }
     }
 
-    private void appendRefsCapWhere(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendRefsCapWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (!filter.hasRefsCapFilter()) {
             return;
         }
@@ -762,7 +762,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ attribute filter helpers
 
-    private void appendAttributeFilters(StringBuilder sb, CatalogFilter filter, String nodeVar) {
+    private void appendAttributeFilters(StringBuilder sb, CatalogQuery filter, String nodeVar) {
         appendDataTypeFilter(sb, filter, nodeVar);
         if (filter.hasAccessTypeFilter()) {
             sb.append(" AND toLower(").append(nodeVar).append(".`access-type`) IN $accessTypes");
@@ -798,7 +798,7 @@ public class CatalogRepository {
         appendRefsCapWhere(sb, nodeVar, filter);
     }
 
-    private void appendAttributeFiltersExcluding(StringBuilder sb, CatalogFilter filter,
+    private void appendAttributeFiltersExcluding(StringBuilder sb, CatalogQuery filter,
             String excludeFacet, String nodeVar) {
         if (!"dataType".equals(excludeFacet)) {
             appendDataTypeFilter(sb, filter, nodeVar);
@@ -847,7 +847,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ operation filter helpers
 
-    private void appendOperationFilters(StringBuilder sb, String nodeVar, CatalogFilter filter) {
+    private void appendOperationFilters(StringBuilder sb, String nodeVar, CatalogQuery filter) {
         if (filter.hasReadOnlyFilter()) {
             sb.append(" AND coalesce(").append(nodeVar).append(".`read-only`, false) = ").append(filter.readOnly());
         }
@@ -874,7 +874,7 @@ public class CatalogRepository {
     }
 
     private void appendOperationFiltersExcluding(StringBuilder sb, String nodeVar,
-            CatalogFilter filter, String excludeFacet) {
+            CatalogQuery filter, String excludeFacet) {
         if (!"readOnly".equals(excludeFacet) && filter.hasReadOnlyFilter()) {
             sb.append(" AND coalesce(").append(nodeVar).append(".`read-only`, false) = ").append(filter.readOnly());
         }
@@ -902,7 +902,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ type facet branches
 
-    private void appendTypeFacetBranches(StringBuilder query, CatalogFilter filter) {
+    private void appendTypeFacetBranches(StringBuilder query, CatalogQuery filter) {
         List<String> branches = List.of(
                 resourceTypeFacetBranch(filter),
                 attributeTypeFacetBranch(filter),
@@ -912,7 +912,7 @@ public class CatalogRepository {
         query.append("\n");
     }
 
-    private String resourceTypeFacetBranch(CatalogFilter filter) {
+    private String resourceTypeFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -936,7 +936,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String attributeTypeFacetBranch(CatalogFilter filter) {
+    private String attributeTypeFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -957,7 +957,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String operationTypeFacetBranch(CatalogFilter filter) {
+    private String operationTypeFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -978,7 +978,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String capabilityTypeFacetBranch(CatalogFilter filter) {
+    private String capabilityTypeFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
             sb.append("MATCH (c:Capability) WHERE false\nRETURN 'capability' AS type");
@@ -1007,7 +1007,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ stability facet branches
 
-    private void appendStabilityFacetBranches(StringBuilder query, CatalogFilter filter) {
+    private void appendStabilityFacetBranches(StringBuilder query, CatalogQuery filter) {
         List<String> branches = new ArrayList<>();
         if (filter.includesType(CatalogType.RESOURCE)) {
             branches.add(resourceStabilityFacetBranch(filter));
@@ -1025,7 +1025,7 @@ public class CatalogRepository {
         query.append("\n");
     }
 
-    private String resourceStabilityFacetBranch(CatalogFilter filter) {
+    private String resourceStabilityFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1048,7 +1048,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String attributeStabilityFacetBranch(CatalogFilter filter) {
+    private String attributeStabilityFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1068,7 +1068,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String operationStabilityFacetBranch(CatalogFilter filter) {
+    private String operationStabilityFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1088,7 +1088,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String capabilityStabilityFacetBranch(CatalogFilter filter) {
+    private String capabilityStabilityFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
             sb.append("MATCH (c:Capability) WHERE false\nRETURN toLower(c.stability) AS stability");
@@ -1112,7 +1112,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ deprecated facet branches
 
-    private void appendDeprecatedFacetBranches(StringBuilder query, CatalogFilter filter) {
+    private void appendDeprecatedFacetBranches(StringBuilder query, CatalogQuery filter) {
         List<String> branches = new ArrayList<>();
         if (filter.includesType(CatalogType.RESOURCE)) {
             branches.add(resourceDeprecatedFacetBranch(filter));
@@ -1130,7 +1130,7 @@ public class CatalogRepository {
         query.append("\n");
     }
 
-    private String resourceDeprecatedFacetBranch(CatalogFilter filter) {
+    private String resourceDeprecatedFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1153,7 +1153,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String attributeDeprecatedFacetBranch(CatalogFilter filter) {
+    private String attributeDeprecatedFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1173,7 +1173,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String operationDeprecatedFacetBranch(CatalogFilter filter) {
+    private String operationDeprecatedFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1193,7 +1193,7 @@ public class CatalogRepository {
         return sb.toString();
     }
 
-    private String capabilityDeprecatedFacetBranch(CatalogFilter filter) {
+    private String capabilityDeprecatedFacetBranch(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("MATCH (c:Capability)\n");
@@ -1218,7 +1218,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ resource-specific facet counts
 
-    private Map<String, Long> singletonFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> singletonFacetCounts(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1250,7 +1250,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> declaresCapFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> declaresCapFacetCounts(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1282,7 +1282,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> definesAttrGroupsFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> definesAttrGroupsFacetCounts(CatalogQuery filter) {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1316,7 +1316,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ relationship-based attribute facet counts
 
-    private Map<String, Long> dataTypeFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> dataTypeFacetCounts(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1361,7 +1361,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> sensitiveFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> sensitiveFacetCounts(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         String nodeVar;
         if (filter.hasSearchQuery()) {
@@ -1398,15 +1398,15 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> hasRequiresFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> hasRequiresFacetCounts(CatalogQuery filter) {
         return relationshipFacetCounts(filter, "hasRequires", "REQUIRES");
     }
 
-    private Map<String, Long> hasAlternativesFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> hasAlternativesFacetCounts(CatalogQuery filter) {
         return relationshipFacetCounts(filter, "hasAlternatives", "ALTERNATIVE");
     }
 
-    private Map<String, Long> relationshipFacetCounts(CatalogFilter filter, String facetName, String relType) {
+    private Map<String, Long> relationshipFacetCounts(CatalogQuery filter, String facetName, String relType) {
         StringBuilder query = new StringBuilder();
         String nodeVar;
         if (filter.hasSearchQuery()) {
@@ -1443,7 +1443,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> refsCapFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> refsCapFacetCounts(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         String nodeVar;
         if (filter.hasSearchQuery()) {
@@ -1482,7 +1482,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ operation facet counts
 
-    private Map<String, Long> booleanOperationFacetCounts(CatalogFilter filter, String facetName, String propertyName) {
+    private Map<String, Long> booleanOperationFacetCounts(CatalogQuery filter, String facetName, String propertyName) {
         StringBuilder query = new StringBuilder();
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1516,7 +1516,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> hasParamsFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> hasParamsFacetCounts(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1550,7 +1550,7 @@ public class CatalogRepository {
         }
     }
 
-    private Map<String, Long> hasReturnValueFacetCounts(CatalogFilter filter) {
+    private Map<String, Long> hasReturnValueFacetCounts(CatalogQuery filter) {
         StringBuilder query = new StringBuilder();
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
@@ -1586,7 +1586,7 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ params and mapping
 
-    Map<String, Object> buildParams(CatalogFilter filter) {
+    Map<String, Object> buildParams(CatalogQuery filter) {
         Map<String, Object> params = new HashMap<>();
         params.put("limit", filter.limit());
         params.put("offset", filter.offset());
@@ -1595,13 +1595,13 @@ public class CatalogRepository {
         return params;
     }
 
-    private Map<String, Object> buildFacetParams(CatalogFilter filter) {
+    private Map<String, Object> buildFacetParams(CatalogQuery filter) {
         Map<String, Object> params = new HashMap<>();
         addFilterParams(params, filter);
         return params;
     }
 
-    private void addFilterParams(Map<String, Object> params, CatalogFilter filter) {
+    private void addFilterParams(Map<String, Object> params, CatalogQuery filter) {
         if (filter.hasStabilityFilter()) {
             params.put("stabilities", filter.stabilities());
         }
@@ -1625,7 +1625,7 @@ public class CatalogRepository {
         }
     }
 
-    private void addAttributeFilterParams(Map<String, Object> params, CatalogFilter filter) {
+    private void addAttributeFilterParams(Map<String, Object> params, CatalogQuery filter) {
         if (filter.hasDataTypeFilter()) {
             List<String> scalarTypes = filter.dataTypes().stream().filter(t -> !"complex".equals(t)).toList();
             if (!scalarTypes.isEmpty()) {
@@ -1656,7 +1656,7 @@ public class CatalogRepository {
     }
 
     private void addAttributeFilterParamsExcluding(Map<String, Object> params,
-            CatalogFilter filter, String excludeParam) {
+            CatalogQuery filter, String excludeParam) {
         if (filter.hasDataTypeFilter() && !"dataTypes".equals(excludeParam)) {
             List<String> scalarTypes = filter.dataTypes().stream().filter(t -> !"complex".equals(t)).toList();
             if (!scalarTypes.isEmpty()) {
@@ -1686,7 +1686,7 @@ public class CatalogRepository {
         }
     }
 
-    private Set<String> applicableFacets(CatalogFilter filter) {
+    private Set<String> applicableFacets(CatalogQuery filter) {
         if (!filter.hasTypeFilter()) {
             Set<String> all = new java.util.HashSet<>();
             for (CatalogType t : CatalogType.values()) {
@@ -1700,7 +1700,7 @@ public class CatalogRepository {
                 .collect(Collectors.toSet());
     }
 
-    private static CatalogResult toCatalogResult(Record record, CatalogFilter filter) {
+    private static CatalogResult toCatalogResult(Record record, CatalogQuery filter) {
         String type = record.get("type").asString();
         Properties properties = null;
         if ("resource".equals(type) && filter.includesType(CatalogType.RESOURCE)) {

@@ -36,9 +36,9 @@ class CatalogResourceTest {
         facets.put("stability", Map.of("default", 30L, "community", 5L, "preview", 3L));
         facets.put("deprecated", Map.of("true", 2L, "false", 36L));
 
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(38);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(38);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(facets);
 
         given()
                 .when().get("/api/catalog")
@@ -69,9 +69,9 @@ class CatalogResourceTest {
         facets.put("stability", Map.of("default", 10L));
         facets.put("deprecated", Map.of("true", 0L, "false", 10L));
 
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(10);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(10);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(facets);
 
         given()
                 .queryParam("type", "resource")
@@ -84,9 +84,9 @@ class CatalogResourceTest {
 
     @Test
     void defaultPaginationValues() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .when().get("/api/catalog")
@@ -98,9 +98,9 @@ class CatalogResourceTest {
 
     @Test
     void singletonFilterPassesToRepository() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .queryParam("singleton", true)
@@ -114,9 +114,9 @@ class CatalogResourceTest {
 
     @Test
     void declaresCapFilterPassesToRepository() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .queryParam("declaresCap", "contains:io")
@@ -137,9 +137,9 @@ class CatalogResourceTest {
         facets.put("type", Map.of("resource", 1L));
         facets.put("stability", Map.of("default", 1L));
 
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(1);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(1);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(facets);
 
         given()
                 .queryParam("type", "resource")
@@ -153,9 +153,9 @@ class CatalogResourceTest {
 
     @Test
     void customPaginationValues() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .queryParam("limit", 25)
@@ -169,9 +169,9 @@ class CatalogResourceTest {
 
     @Test
     void searchQueryPassesToRepository() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .queryParam("q", "pool")
@@ -179,18 +179,18 @@ class CatalogResourceTest {
                 .then()
                 .statusCode(200);
 
-        ArgumentCaptor<CatalogFilter> captor = ArgumentCaptor.forClass(CatalogFilter.class);
+        ArgumentCaptor<CatalogQuery> captor = ArgumentCaptor.forClass(CatalogQuery.class);
         Mockito.verify(repository).search(captor.capture());
-        CatalogFilter filter = captor.getValue();
+        CatalogQuery filter = captor.getValue();
         assertTrue(filter.hasSearchQuery());
         assertEquals("pool", filter.q());
     }
 
     @Test
     void deprecatedFilterPassesToRepository() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .queryParam("deprecated", "true")
@@ -198,18 +198,18 @@ class CatalogResourceTest {
                 .then()
                 .statusCode(200);
 
-        ArgumentCaptor<CatalogFilter> captor = ArgumentCaptor.forClass(CatalogFilter.class);
+        ArgumentCaptor<CatalogQuery> captor = ArgumentCaptor.forClass(CatalogQuery.class);
         Mockito.verify(repository).search(captor.capture());
-        CatalogFilter filter = captor.getValue();
+        CatalogQuery filter = captor.getValue();
         assertTrue(filter.hasDeprecatedFilter());
         assertEquals(true, filter.deprecated());
     }
 
     @Test
     void scopeFilterPassesToRepository() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .queryParam("scope", "/subsystem=io")
@@ -217,36 +217,36 @@ class CatalogResourceTest {
                 .then()
                 .statusCode(200);
 
-        ArgumentCaptor<CatalogFilter> captor = ArgumentCaptor.forClass(CatalogFilter.class);
+        ArgumentCaptor<CatalogQuery> captor = ArgumentCaptor.forClass(CatalogQuery.class);
         Mockito.verify(repository).search(captor.capture());
-        CatalogFilter filter = captor.getValue();
+        CatalogQuery filter = captor.getValue();
         assertTrue(filter.hasScopeFilter());
         assertEquals("/subsystem=io", filter.scope());
     }
 
     @Test
     void sortOrderDefaults() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .when().get("/api/catalog")
                 .then()
                 .statusCode(200);
 
-        ArgumentCaptor<CatalogFilter> captor = ArgumentCaptor.forClass(CatalogFilter.class);
+        ArgumentCaptor<CatalogQuery> captor = ArgumentCaptor.forClass(CatalogQuery.class);
         Mockito.verify(repository).search(captor.capture());
-        CatalogFilter filter = captor.getValue();
+        CatalogQuery filter = captor.getValue();
         assertEquals("name", filter.sort());
         assertEquals("asc", filter.order());
     }
 
     @Test
     void sortOrderWithSearchQueryDefaultsToScore() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .queryParam("q", "pool")
@@ -254,17 +254,17 @@ class CatalogResourceTest {
                 .then()
                 .statusCode(200);
 
-        ArgumentCaptor<CatalogFilter> captor = ArgumentCaptor.forClass(CatalogFilter.class);
+        ArgumentCaptor<CatalogQuery> captor = ArgumentCaptor.forClass(CatalogQuery.class);
         Mockito.verify(repository).search(captor.capture());
-        CatalogFilter filter = captor.getValue();
+        CatalogQuery filter = captor.getValue();
         assertEquals("score", filter.sort());
     }
 
     @Test
     void explicitSortOverridesSearchDefault() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .queryParam("q", "pool")
@@ -273,9 +273,9 @@ class CatalogResourceTest {
                 .then()
                 .statusCode(200);
 
-        ArgumentCaptor<CatalogFilter> captor = ArgumentCaptor.forClass(CatalogFilter.class);
+        ArgumentCaptor<CatalogQuery> captor = ArgumentCaptor.forClass(CatalogQuery.class);
         Mockito.verify(repository).search(captor.capture());
-        CatalogFilter filter = captor.getValue();
+        CatalogQuery filter = captor.getValue();
         assertEquals("name", filter.sort());
     }
 
@@ -294,9 +294,9 @@ class CatalogResourceTest {
         facets.put("type", Map.of("attribute", 2L));
         facets.put("dataType", Map.of("int", 1L, "boolean", 1L));
 
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(2);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(2);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(facets);
 
         given()
                 .queryParam("dataType", "int,boolean")
@@ -319,9 +319,9 @@ class CatalogResourceTest {
         facets.put("type", Map.of("attribute", 1L));
         facets.put("required", Map.of("yes", 1L, "no", 0L));
 
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(1);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(1);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(facets);
 
         given()
                 .queryParam("required", true)
@@ -345,9 +345,9 @@ class CatalogResourceTest {
         facets.put("type", Map.of("operation", 5L));
         facets.put("readOnly", Map.of("yes", 3L, "no", 2L));
 
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(5);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(5);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(facets);
 
         given()
                 .queryParam("type", "operation")
@@ -365,9 +365,9 @@ class CatalogResourceTest {
 
     @Test
     void sensitiveFilterPassesToRepository() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .queryParam("sensitive", true)
@@ -381,9 +381,9 @@ class CatalogResourceTest {
 
     @Test
     void refsCapFilterPassesToRepository() {
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(0);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(Map.of());
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(Map.of());
 
         given()
                 .queryParam("refsCap", "contains:io")
@@ -410,9 +410,9 @@ class CatalogResourceTest {
                 "read-write", 15L, "read-only", 5L, "metric", 0L)));
         facets.put("required", new LinkedHashMap<>(Map.of("yes", 5L, "no", 25L)));
 
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(List.of());
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(30);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(30);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(facets);
 
         given()
                 .when().get("/api/catalog")
@@ -441,9 +441,9 @@ class CatalogResourceTest {
         facets.put("type", Map.of("operation", 3L));
         facets.put("hasParams", Map.of("yes", 2L, "no", 1L));
 
-        Mockito.when(repository.search(any(CatalogFilter.class))).thenReturn(results);
-        Mockito.when(repository.total(any(CatalogFilter.class))).thenReturn(3);
-        Mockito.when(repository.facetCounts(any(CatalogFilter.class))).thenReturn(facets);
+        Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
+        Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(3);
+        Mockito.when(repository.facetCounts(any(CatalogQuery.class))).thenReturn(facets);
 
         given()
                 .queryParam("type", "operation")
