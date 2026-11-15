@@ -9,23 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add javadoc to all public classes and `package-info.java` for all 9 packages
-- Add unit tests for `CatalogQuery` input parsing and validation (80 tests)
-- Add unit tests for `CatalogRepository` query building and parameter construction (34 tests)
-- Add Cypher injection prevention tests verifying sort, order, and type allowlists reject malicious input
+- Add unit tests for `CatalogQuery`, `CatalogRepository`, and Cypher injection prevention (114 tests)
 
 ### Changed
 - **BREAKING:** Change deprecated catalog filter from `yes`/`no` string to `Boolean`, aligning with all other boolean filters (facet keys change from `yes`/`no` to `true`/`false`)
-- Reorganize endpoints into per-feature packages: `search`, `catalog`, `capability`, `attribute`, `operation`, `resource`, `version`, `identity`
-- Split `ModelGraphRepository` into per-endpoint repositories (`SearchRepository`, `CatalogRepository`, `CapabilityRepository`, `AttributeRepository`, `OperationRepository`, `ResourceRepository`, `IdentityRepository`)
-- Extract shared Lucene utilities into `LuceneUtils` class
-- Cache compiled regex pattern in `LuceneUtils` for boolean operator neutralization
+- Reorganize endpoints into per-feature packages with dedicated repositories and shared `LuceneUtils`
 
 ### Fixed
 - Cap search endpoint `limit` parameter at 100 to prevent unbounded result sets
-- Remove duplicate `SEARCH_INDEX` constant in `CatalogRepository` (now uses shared `LuceneUtils.SEARCH_INDEX`)
+- Replace deprecated `Schema.example` and Hamcrest `isOneOf` APIs
 
 ### Security
-- Add defense-in-depth `SAFE_SORT_FIELDS` and `SAFE_ORDER_DIRECTIONS` allowlists in `CatalogRepository.appendOrderBy()` to prevent Cypher injection even if `CatalogQuery` validation is bypassed
+- Add defense-in-depth sort field and order direction allowlists to prevent Cypher injection even if `CatalogQuery` validation is bypassed
 
 ## [0.4.0] - 2026-11-12
 
@@ -43,11 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.3] - 2026-10-27
 
-### Fixed
-- Fix deprecated facet always returning zero by using `DEPRECATED_SINCE` relationship instead of non-existent `deprecated` node property
-
 ### Added
 - Add integration test verifying deprecated facet counts are non-zero
+
+### Fixed
+- Fix deprecated facet always returning zero by using `DEPRECATED_SINCE` relationship instead of non-existent `deprecated` node property
 
 ## [0.3.2] - 2026-10-27
 
