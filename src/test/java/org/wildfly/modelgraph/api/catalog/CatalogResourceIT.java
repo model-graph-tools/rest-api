@@ -90,7 +90,7 @@ class CatalogResourceIT {
 
         List<String> types = response.getList("results.type");
         assertThat("Results should only contain resource or attribute",
-                types, everyItem(isOneOf("resource", "attribute")));
+                types, everyItem(oneOf("resource", "attribute")));
         assertThat("Should contain resources", types, hasItem("resource"));
         assertThat("Should contain attributes", types, hasItem("attribute"));
     }
@@ -487,7 +487,7 @@ class CatalogResourceIT {
 
         List<String> dataTypes = response.getList("results.properties.dataType");
         assertThat("All results should have dataType string or boolean",
-                dataTypes, everyItem(isOneOf("string", "boolean")));
+                dataTypes, everyItem(oneOf("string", "boolean")));
     }
 
     @Test
@@ -803,7 +803,7 @@ class CatalogResourceIT {
 
         List<String> dataTypes = response.getList("results.properties.dataType");
         assertThat("All results should have dataType string or complex",
-                dataTypes, everyItem(isOneOf("string", "complex")));
+                dataTypes, everyItem(oneOf("string", "complex")));
     }
 
     @Test

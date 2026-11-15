@@ -9,7 +9,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @RegisterForReflection
 @Schema(description = "Attributes that reference a capability")
 public record CapabilityReferencesResponse(
-        @Schema(description = "Capability name", example = "org.wildfly.data-source")
+        @Schema(description = "Capability name", examples = {"org.wildfly.data-source"})
         String capability,
         @Schema(description = "List of referencing attributes")
         List<CapabilityReference> references) {

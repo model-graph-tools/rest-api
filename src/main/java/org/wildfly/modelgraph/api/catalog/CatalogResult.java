@@ -11,22 +11,22 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "A single catalog result representing a resource, attribute, operation, or capability")
 public record CatalogResult(
-        @Schema(description = "Node type", example = "attribute", enumeration = {"resource", "attribute", "operation", "capability"})
+        @Schema(description = "Node type", examples = {"attribute"}, enumeration = {"resource", "attribute", "operation", "capability"})
         String type,
 
-        @Schema(description = "Element name", example = "connection-url")
+        @Schema(description = "Element name", examples = {"connection-url"})
         String name,
 
-        @Schema(description = "Element description (may be null)", example = "The JDBC driver connection URL")
+        @Schema(description = "Element description (may be null)", examples = {"The JDBC driver connection URL"})
         String description,
 
-        @Schema(description = "Full address. For attributes: includes attribute name segment. Null for some capabilities.", example = "/subsystem=datasources/data-source=*/connection-url")
+        @Schema(description = "Full address. For attributes: includes attribute name segment. Null for some capabilities.", examples = {"/subsystem=datasources/data-source=*/connection-url"})
         String address,
 
-        @Schema(description = "Parent resource address without the attribute/operation name. Present for attributes and operations.", example = "/subsystem=datasources/data-source=*")
+        @Schema(description = "Parent resource address without the attribute/operation name. Present for attributes and operations.", examples = {"/subsystem=datasources/data-source=*"})
         String resourceAddress,
 
-        @Schema(description = "Stability level", example = "default", enumeration = {"default", "community", "preview", "experimental"})
+        @Schema(description = "Stability level", examples = {"default"}, enumeration = {"default", "community", "preview", "experimental"})
         String stability,
 
         @Schema(description = "Whether the element is deprecated")

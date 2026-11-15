@@ -10,7 +10,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "REST API build information")
 public record VersionResponse(
-        @Schema(description = "API version", example = "0.3.3")
+        @Schema(description = "API version", examples = {"0.3.3"})
         String version,
         @Schema(description = "Build timestamp")
         String buildTime,

@@ -9,19 +9,19 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @RegisterForReflection
 @Schema(description = "Detailed resource information including child resources, attributes, operations, and capabilities")
 public record ResourceDetailResponse(
-        @Schema(description = "Resource name", example = "buffer-pool")
+        @Schema(description = "Resource name", examples = {"buffer-pool"})
         String name,
-        @Schema(description = "Full resource address", example = "/subsystem=io/buffer-pool=*")
+        @Schema(description = "Full resource address", examples = {"/subsystem=io/buffer-pool=*"})
         String address,
         @Schema(description = "Resource description")
         String description,
-        @Schema(description = "Stability level", example = "stable", enumeration = {"default", "community", "preview", "experimental"})
+        @Schema(description = "Stability level", examples = {"stable"}, enumeration = {"default", "community", "preview", "experimental"})
         String stability,
         @Schema(description = "Whether the resource is a singleton")
         boolean singleton,
         @Schema(description = "Deprecation info, null if not deprecated")
         Deprecation deprecation,
-        @Schema(description = "Parent resource address, null for root resources", example = "/subsystem=io")
+        @Schema(description = "Parent resource address, null for root resources", examples = {"/subsystem=io"})
         String parentAddress,
         @Schema(description = "Direct child resources, sorted by name")
         List<ChildResource> childResources,
@@ -35,7 +35,7 @@ public record ResourceDetailResponse(
     @RegisterForReflection
     @Schema(description = "Deprecation information")
     public record Deprecation(
-            @Schema(description = "Version since which the element is deprecated", example = "29.0.0")
+            @Schema(description = "Version since which the element is deprecated", examples = {"29.0.0"})
             String since,
             @Schema(description = "Reason for deprecation")
             String reason) {
@@ -44,24 +44,24 @@ public record ResourceDetailResponse(
     @RegisterForReflection
     @Schema(description = "A child resource reference")
     public record ChildResource(
-            @Schema(description = "Child resource name", example = "worker")
+            @Schema(description = "Child resource name", examples = {"worker"})
             String name,
-            @Schema(description = "Child resource address", example = "/subsystem=io/worker=*")
+            @Schema(description = "Child resource address", examples = {"/subsystem=io/worker=*"})
             String address) {
     }
 
     @RegisterForReflection
     @Schema(description = "Attribute summary for the resource detail view")
     public record AttributeSummary(
-            @Schema(description = "Attribute name", example = "buffer-size")
+            @Schema(description = "Attribute name", examples = {"buffer-size"})
             String name,
-            @Schema(description = "Data type", example = "INT")
+            @Schema(description = "Data type", examples = {"INT"})
             String type,
-            @Schema(description = "Stability level", example = "stable")
+            @Schema(description = "Stability level", examples = {"stable"})
             String stability,
-            @Schema(description = "Access type", example = "read-write", enumeration = {"read-write", "read-only", "metric"})
+            @Schema(description = "Access type", examples = {"read-write"}, enumeration = {"read-write", "read-only", "metric"})
             String accessType,
-            @Schema(description = "Storage type", example = "configuration", enumeration = {"configuration", "runtime"})
+            @Schema(description = "Storage type", examples = {"configuration"}, enumeration = {"configuration", "runtime"})
             String storage,
             @Schema(description = "Whether the attribute is deprecated")
             boolean deprecated) {
@@ -70,9 +70,9 @@ public record ResourceDetailResponse(
     @RegisterForReflection
     @Schema(description = "Operation summary for the resource detail view")
     public record OperationSummary(
-            @Schema(description = "Operation name", example = "add")
+            @Schema(description = "Operation name", examples = {"add"})
             String name,
-            @Schema(description = "Stability level", example = "stable")
+            @Schema(description = "Stability level", examples = {"stable"})
             String stability,
             @Schema(description = "Whether the operation is read-only")
             boolean readOnly,
@@ -87,7 +87,7 @@ public record ResourceDetailResponse(
     @RegisterForReflection
     @Schema(description = "Capability declared by this resource")
     public record CapabilitySummary(
-            @Schema(description = "Capability name", example = "org.wildfly.io.buffer-pool")
+            @Schema(description = "Capability name", examples = {"org.wildfly.io.buffer-pool"})
             String name) {
     }
 }

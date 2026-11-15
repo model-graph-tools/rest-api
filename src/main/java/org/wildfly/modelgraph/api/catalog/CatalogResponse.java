@@ -16,12 +16,12 @@ public record CatalogResponse(
         @Schema(description = "Facet counts for filtering. Counts reflect the result set with all other active filters applied but without the facet's own filter.")
         CatalogFacets facets,
 
-        @Schema(description = "Total number of matching results across all pages", example = "213")
+        @Schema(description = "Total number of matching results across all pages", examples = {"213"})
         int total,
 
-        @Schema(description = "Page size used for this response", example = "50")
+        @Schema(description = "Page size used for this response", examples = {"50"})
         int limit,
 
-        @Schema(description = "Pagination offset used for this response", example = "0")
+        @Schema(description = "Pagination offset used for this response", examples = {"0"})
         int offset) {
 }

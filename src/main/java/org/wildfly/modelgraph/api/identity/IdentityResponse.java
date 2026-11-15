@@ -7,15 +7,15 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @RegisterForReflection
 @Schema(description = "WildFly feature pack identity metadata")
 public record IdentityResponse(
-        @Schema(description = "Feature pack identifier", example = "wildfly")
+        @Schema(description = "Feature pack identifier", examples = {"wildfly"})
         String identifier,
-        @Schema(description = "Maven group ID", example = "org.wildfly")
+        @Schema(description = "Maven group ID", examples = {"org.wildfly"})
         String groupId,
-        @Schema(description = "Maven artifact ID", example = "wildfly-galleon-pack")
+        @Schema(description = "Maven artifact ID", examples = {"wildfly-galleon-pack"})
         String artifactId,
-        @Schema(description = "Feature pack name", example = "WildFly")
+        @Schema(description = "Feature pack name", examples = {"WildFly"})
         String name,
-        @Schema(description = "WildFly version", example = "42.0.0.Final")
+        @Schema(description = "WildFly version", examples = {"42.0.0.Final"})
         String version,
         @Schema(description = "Feature pack type")
         String type,

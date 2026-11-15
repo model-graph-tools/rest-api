@@ -260,7 +260,7 @@ class SearchResourceIT {
                 .then()
                 .statusCode(200)
                 .body("results", not(empty()))
-                .body("results.type", everyItem(isOneOf("resource", "attribute", "capability", "operation")))
+                .body("results.type", everyItem(oneOf("resource", "attribute", "capability", "operation")))
                 .body("results.name", everyItem(notNullValue()))
                 .body("results.stability", everyItem(notNullValue()));
     }

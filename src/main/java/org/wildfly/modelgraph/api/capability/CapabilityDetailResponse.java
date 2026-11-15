@@ -9,9 +9,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @RegisterForReflection
 @Schema(description = "Detailed capability information including declaring resources and referencing attributes")
 public record CapabilityDetailResponse(
-        @Schema(description = "Capability name", example = "org.wildfly.data-source")
+        @Schema(description = "Capability name", examples = {"org.wildfly.data-source"})
         String name,
-        @Schema(description = "Stability level", example = "stable", enumeration = {"default", "community", "preview", "experimental"})
+        @Schema(description = "Stability level", examples = {"stable"}, enumeration = {"default", "community", "preview", "experimental"})
         String stability,
         @Schema(description = "Resources that declare this capability")
         List<DeclaredBy> declaredBy,
@@ -21,9 +21,9 @@ public record CapabilityDetailResponse(
     @RegisterForReflection
     @Schema(description = "A resource that declares a capability")
     public record DeclaredBy(
-            @Schema(description = "Resource name", example = "data-source")
+            @Schema(description = "Resource name", examples = {"data-source"})
             String resourceName,
-            @Schema(description = "Full resource address", example = "/subsystem=datasources/data-source=*")
+            @Schema(description = "Full resource address", examples = {"/subsystem=datasources/data-source=*"})
             String resourceAddress) {
     }
 }

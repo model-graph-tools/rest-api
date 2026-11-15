@@ -9,11 +9,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @RegisterForReflection
 @Schema(description = "Detailed operation information including parameters and return value")
 public record OperationDetailResponse(
-        @Schema(description = "Operation name", example = "add")
+        @Schema(description = "Operation name", examples = {"add"})
         String name,
         @Schema(description = "Operation description")
         String description,
-        @Schema(description = "Stability level", example = "stable")
+        @Schema(description = "Stability level", examples = {"stable"})
         String stability,
         @Schema(description = "Whether the operation is read-only")
         boolean readOnly,
@@ -23,9 +23,9 @@ public record OperationDetailResponse(
         boolean global,
         @Schema(description = "Deprecation info, null if not deprecated")
         Deprecation deprecation,
-        @Schema(description = "Owning resource name", example = "data-source")
+        @Schema(description = "Owning resource name", examples = {"data-source"})
         String resourceName,
-        @Schema(description = "Owning resource address", example = "/subsystem=datasources/data-source=*")
+        @Schema(description = "Owning resource address", examples = {"/subsystem=datasources/data-source=*"})
         String resourceAddress,
         @Schema(description = "Operation parameters, sorted by name")
         List<Parameter> parameters,
@@ -35,7 +35,7 @@ public record OperationDetailResponse(
     @RegisterForReflection
     @Schema(description = "Deprecation information")
     public record Deprecation(
-            @Schema(description = "Version since which the operation is deprecated", example = "29.0.0")
+            @Schema(description = "Version since which the operation is deprecated", examples = {"29.0.0"})
             String since,
             @Schema(description = "Reason for deprecation")
             String reason) {
@@ -44,9 +44,9 @@ public record OperationDetailResponse(
     @RegisterForReflection
     @Schema(description = "Operation parameter")
     public record Parameter(
-            @Schema(description = "Parameter name", example = "connection-url")
+            @Schema(description = "Parameter name", examples = {"connection-url"})
             String name,
-            @Schema(description = "Parameter data type", example = "STRING")
+            @Schema(description = "Parameter data type", examples = {"STRING"})
             String type,
             @Schema(description = "Parameter description")
             String description,
@@ -63,7 +63,7 @@ public record OperationDetailResponse(
     @RegisterForReflection
     @Schema(description = "Operation return value")
     public record ReturnValue(
-            @Schema(description = "Return value type", example = "STRING")
+            @Schema(description = "Return value type", examples = {"STRING"})
             String type,
             @Schema(description = "Return value description")
             String description) {
