@@ -24,6 +24,7 @@ public class CatalogRepository {
     private static final String SEARCH_INDEX = LuceneUtils.SEARCH_INDEX;
     private static final Set<String> SAFE_SORT_FIELDS = Set.of("name", "type", "address", "stability", "score");
     private static final Set<String> SAFE_ORDER_DIRECTIONS = Set.of("ASC", "DESC");
+    private static final Set<String> REFINED_DATA_TYPES = Set.of("list-simple", "list-object", "map", "object");
     private static final String NULL_OP_PROPS = ", null AS readOnly, null AS runtimeOnly, null AS isGlobal, null AS hasParams, null AS hasReturnValue";
     private static final String OP_PROPS = ", coalesce(o.`read-only`, false) AS readOnly, coalesce(o.`runtime-only`, false) AS runtimeOnly, coalesce(o.global, false) AS isGlobal, EXISTS { (o)-[:ACCEPTS]->() } AS hasParams, o.`return-value` IS NOT NULL AS hasReturnValue";
     private static final String OP_PROPS_SEARCH = ", coalesce(node.`read-only`, false) AS readOnly, coalesce(node.`runtime-only`, false) AS runtimeOnly, coalesce(node.global, false) AS isGlobal, EXISTS { (node)-[:ACCEPTS]->() } AS hasParams, node.`return-value` IS NOT NULL AS hasReturnValue";
@@ -476,7 +477,7 @@ public class CatalogRepository {
             sb.append("\nRETURN 'attribute' AS type, node.name AS name, node.description AS description, ");
             sb.append("r.address + '/' + node.name AS address, r.address AS resourceAddress, toLower(node.stability) AS stability, ");
             sb.append("EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated, ");
-            sb.append("{dataType: CASE WHEN EXISTS { (node)-[:CONSISTS_OF]->() } THEN 'complex' ELSE toLower(node.type) END, accessType: toLower(node.`access-type`), ");
+            sb.append("{dataType: ").append(dataTypeCaseExpression("node")).append(", accessType: toLower(node.`access-type`), ");
             sb.append("storage: toLower(node.storage), restart: toLower(node.`restart-required`), ");
             sb.append("required: coalesce(node.required, false), nillable: coalesce(node.nillable, false), ");
             sb.append("expressions: coalesce(node.`expressions-allowed`, false), ");
@@ -499,7 +500,7 @@ public class CatalogRepository {
             sb.append("\nRETURN 'attribute' AS type, a.name AS name, a.description AS description, ");
             sb.append("r.address + '/' + a.name AS address, r.address AS resourceAddress, toLower(a.stability) AS stability, ");
             sb.append("EXISTS { (a)-[:DEPRECATED_SINCE]->() } AS deprecated, ");
-            sb.append("{dataType: CASE WHEN EXISTS { (a)-[:CONSISTS_OF]->() } THEN 'complex' ELSE toLower(a.type) END, accessType: toLower(a.`access-type`), ");
+            sb.append("{dataType: ").append(dataTypeCaseExpression("a")).append(", accessType: toLower(a.`access-type`), ");
             sb.append("storage: toLower(a.storage), restart: toLower(a.`restart-required`), ");
             sb.append("required: coalesce(a.required, false), nillable: coalesce(a.nillable, false), ");
             sb.append("expressions: coalesce(a.`expressions-allowed`, false), ");
@@ -677,16 +678,33 @@ public class CatalogRepository {
             return;
         }
         List<String> dataTypes = filter.dataTypes();
-        boolean includesComplex = dataTypes.contains("complex");
-        List<String> scalarTypes = dataTypes.stream().filter(t -> !"complex".equals(t)).toList();
+        List<String> refined = dataTypes.stream().filter(REFINED_DATA_TYPES::contains).toList();
+        List<String> scalar = dataTypes.stream().filter(t -> !REFINED_DATA_TYPES.contains(t)).toList();
 
-        if (includesComplex && scalarTypes.isEmpty()) {
-            sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:CONSISTS_OF]->() }");
-        } else if (includesComplex) {
-            sb.append(" AND (EXISTS { (").append(nodeVar).append(")-[:CONSISTS_OF]->() } OR toLower(")
-                    .append(nodeVar).append(".type) IN $dataTypes)");
+        List<String> conditions = new ArrayList<>();
+        for (String category : refined) {
+            switch (category) {
+                case "list-simple" -> conditions.add("(" + nodeVar + ".type = 'LIST' AND (" + nodeVar
+                        + ".`value-type` <> 'OBJECT' OR " + nodeVar + ".`value-type` IS NULL))");
+                case "list-object" -> conditions.add("(" + nodeVar + ".type = 'LIST' AND " + nodeVar
+                        + ".`value-type` = 'OBJECT')");
+                case "map" -> conditions.add("(" + nodeVar + ".type = 'OBJECT' AND NOT EXISTS { (" + nodeVar
+                        + ")-[:CONSISTS_OF]->() } AND NOT (" + nodeVar + ".`value-type` IS NULL OR " + nodeVar
+                        + ".`value-type` = 'OBJECT'))");
+                case "object" -> conditions.add("(" + nodeVar + ".type = 'OBJECT' AND (EXISTS { (" + nodeVar
+                        + ")-[:CONSISTS_OF]->() } OR " + nodeVar + ".`value-type` IS NULL OR " + nodeVar
+                        + ".`value-type` = 'OBJECT'))");
+                default -> { /* unreachable — REFINED_DATA_TYPES is the filter */ }
+            }
+        }
+        if (!scalar.isEmpty()) {
+            conditions.add("toLower(" + nodeVar + ".type) IN $dataTypes");
+        }
+
+        if (conditions.size() == 1) {
+            sb.append(" AND ").append(conditions.getFirst());
         } else {
-            sb.append(" AND toLower(").append(nodeVar).append(".type) IN $dataTypes");
+            sb.append(" AND (").append(String.join(" OR ", conditions)).append(")");
         }
     }
 
@@ -1303,7 +1321,7 @@ public class CatalogRepository {
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
             appendAttributeFiltersExcluding(query, filter, "dataType", "node");
-            query.append("\nWITH CASE WHEN EXISTS { (node)-[:CONSISTS_OF]->() } THEN 'complex' ELSE toLower(node.type) END AS value");
+            query.append("\nWITH ").append(dataTypeCaseExpression("node")).append(" AS value");
         } else {
             query.append(
                     "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
@@ -1311,7 +1329,7 @@ public class CatalogRepository {
             appendDeprecatedWhere(query, "a", filter);
             appendScopeWhere(query, "r", filter);
             appendAttributeFiltersExcluding(query, filter, "dataType", "a");
-            query.append("\nWITH CASE WHEN EXISTS { (a)-[:CONSISTS_OF]->() } THEN 'complex' ELSE toLower(a.type) END AS value");
+            query.append("\nWITH ").append(dataTypeCaseExpression("a")).append(" AS value");
         }
         query.append("\nWHERE value IS NOT NULL");
         query.append("\nRETURN value, count(*) AS count");
@@ -1329,11 +1347,12 @@ public class CatalogRepository {
             counts.putIfAbsent("boolean", 0L);
             counts.putIfAbsent("double", 0L);
             counts.putIfAbsent("big-decimal", 0L);
-            counts.putIfAbsent("list", 0L);
-            counts.putIfAbsent("object", 0L);
             counts.putIfAbsent("bytes", 0L);
             counts.putIfAbsent("property", 0L);
-            counts.putIfAbsent("complex", 0L);
+            counts.putIfAbsent("list-simple", 0L);
+            counts.putIfAbsent("list-object", 0L);
+            counts.putIfAbsent("map", 0L);
+            counts.putIfAbsent("object", 0L);
             return counts;
         }
     }
@@ -1604,7 +1623,9 @@ public class CatalogRepository {
 
     private void addAttributeFilterParams(Map<String, Object> params, CatalogQuery filter) {
         if (filter.hasDataTypeFilter()) {
-            List<String> scalarTypes = filter.dataTypes().stream().filter(t -> !"complex".equals(t)).toList();
+            List<String> scalarTypes = filter.dataTypes().stream()
+                    .filter(t -> !REFINED_DATA_TYPES.contains(t))
+                    .toList();
             if (!scalarTypes.isEmpty()) {
                 params.put("dataTypes", scalarTypes);
             }
@@ -1635,7 +1656,9 @@ public class CatalogRepository {
     private void addAttributeFilterParamsExcluding(Map<String, Object> params,
             CatalogQuery filter, String excludeParam) {
         if (filter.hasDataTypeFilter() && !"dataTypes".equals(excludeParam)) {
-            List<String> scalarTypes = filter.dataTypes().stream().filter(t -> !"complex".equals(t)).toList();
+            List<String> scalarTypes = filter.dataTypes().stream()
+                    .filter(t -> !REFINED_DATA_TYPES.contains(t))
+                    .toList();
             if (!scalarTypes.isEmpty()) {
                 params.put("dataTypes", scalarTypes);
             }
@@ -1736,5 +1759,16 @@ public class CatalogRepository {
             return b;
         }
         return false;
+    }
+
+    private static String dataTypeCaseExpression(String nodeVar) {
+        return "CASE" +
+                " WHEN " + nodeVar + ".type = 'LIST' AND " + nodeVar + ".`value-type` = 'OBJECT' THEN 'list-object'" +
+                " WHEN " + nodeVar + ".type = 'LIST' THEN 'list-simple'" +
+                " WHEN " + nodeVar + ".type = 'OBJECT' AND EXISTS { (" + nodeVar + ")-[:CONSISTS_OF]->() } THEN 'object'" +
+                " WHEN " + nodeVar + ".type = 'OBJECT' AND (" + nodeVar + ".`value-type` = 'OBJECT' OR " + nodeVar + ".`value-type` IS NULL) THEN 'object'" +
+                " WHEN " + nodeVar + ".type = 'OBJECT' THEN 'map'" +
+                " ELSE toLower(" + nodeVar + ".type)" +
+                " END";
     }
 }

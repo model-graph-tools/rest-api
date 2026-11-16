@@ -275,31 +275,31 @@ class CatalogRepositoryTest {
     }
 
     @Test
-    void buildParamsComplexDataTypeExcluded() {
+    void buildParamsRefinedDataTypesExcluded() {
         CatalogQuery filter = CatalogQuery.of(null, null, null, null, null,
                 null, null, null,
-                "complex", null, null, null,
+                "list-simple", null, null, null,
                 null, null, null,
                 null, null, null, null, null, null,
                 null, null, null, null, null,
                 null, null, null, null);
         Map<String, Object> params = repository.buildParams(filter);
         assertFalse(params.containsKey("dataTypes"),
-                "complex-only dataType should not add dataTypes param (handled via CONSISTS_OF relationship)");
+                "list-simple-only dataType should not add dataTypes param");
     }
 
     @Test
-    void buildParamsMixedDataTypeFiltersComplexOut() {
+    void buildParamsMixedRefinedAndScalarDataTypes() {
         CatalogQuery filter = CatalogQuery.of(null, null, null, null, null,
                 null, null, null,
-                "string,complex", null, null, null,
+                "string,list-object,map", null, null, null,
                 null, null, null,
                 null, null, null, null, null, null,
                 null, null, null, null, null,
                 null, null, null, null);
         Map<String, Object> params = repository.buildParams(filter);
         assertEquals(List.of("string"), params.get("dataTypes"),
-                "complex is filtered out of the param list (handled separately in query)");
+                "refined categories filtered out, only scalar types remain");
     }
 
     // ------------------------------------------------------ order by
