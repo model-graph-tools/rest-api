@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Include `/deployment=*` resource in search, catalog, and capability reference results while continuing to exclude its sub-resources (`/deployment=*/subsystem=*`, `/deployment=*/subdeployment=*`, etc.)
+
 ## [0.5.0] - 2026-11-16
 
 ### Changed

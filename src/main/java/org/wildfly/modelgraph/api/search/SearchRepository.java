@@ -21,7 +21,7 @@ public class SearchRepository {
             CALL {
                 CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
                 WHERE node:Resource
-                  AND NOT node.address STARTS WITH '/deployment'
+                  AND NOT node.address STARTS WITH '/deployment=*/'
                 RETURN 'resource' AS type, node.name AS name, node.description AS description,
                        node.address AS address, null AS providedBy, node.stability AS stability,
                        node.singleton AS singleton, score
@@ -34,7 +34,7 @@ public class SearchRepository {
                 CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
                 WHERE node:Attribute
                 MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource)
-                WHERE NOT r.address STARTS WITH '/deployment'
+                WHERE NOT r.address STARTS WITH '/deployment=*/'
                 RETURN 'attribute' AS type, node.name AS name, node.description AS description,
                        r.address AS address, null AS providedBy, node.stability AS stability,
                        r.singleton AS singleton, score
@@ -48,7 +48,7 @@ public class SearchRepository {
                 WHERE ALL(part IN $capabilityTerms WHERE
                     toLower(replace(node.name, '-', '')) CONTAINS part)
                 OPTIONAL MATCH (node)<-[:DECLARES_CAPABILITY]-(r:Resource)
-                WHERE NOT r.address STARTS WITH '/deployment'
+                WHERE NOT r.address STARTS WITH '/deployment=*/'
                 WITH node,
                      COLLECT(CASE WHEN r IS NOT NULL THEN {name: r.name, address: r.address} END) AS providedBy
                 RETURN 'capability' AS type, node.name AS name, null AS description,
@@ -63,7 +63,7 @@ public class SearchRepository {
                 CALL db.index.fulltext.queryNodes('%s', $term) YIELD node, score
                 WHERE node:Operation AND NOT node.global
                 MATCH (node)<-[:PROVIDES]-(r:Resource)
-                WHERE NOT r.address STARTS WITH '/deployment'
+                WHERE NOT r.address STARTS WITH '/deployment=*/'
                 RETURN 'operation' AS type, node.name AS name, node.description AS description,
                        r.address AS address, null AS providedBy, node.stability AS stability,
                        r.singleton AS singleton, score
