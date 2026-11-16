@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING:** Replace flat `list`, `object`, and `complex` data type categories with refined categories: `list-simple` (LIST with simple value-type), `list-object` (LIST with OBJECT value-type), `map` (OBJECT without sub-attributes), and `object` (OBJECT with CONSISTS_OF sub-attributes or null value-type) ([#58])
+
 ## [0.4.2] - 2026-11-16
 
 ### Changed
@@ -184,6 +187,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-arch native image builds (amd64 + arm64)
 
 
+[#58]: https://github.com/model-graph-tools/rest-api/issues/58
 [#43]: https://github.com/model-graph-tools/rest-api/issues/43
 [#44]: https://github.com/model-graph-tools/rest-api/issues/44
 [#45]: https://github.com/model-graph-tools/rest-api/issues/45
