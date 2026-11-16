@@ -30,7 +30,7 @@ public record CatalogFacets(
         @Schema(description = "Count of singleton vs non-singleton resources. Present when results include resources.")
         Map<String, Long> singleton,
 
-        @Schema(description = "Count of resources that declare capabilities (yes/no). Present when results include resources.")
+        @Schema(description = "Count of resources that declare capabilities (true/false). Present when results include resources.")
         Map<String, Long> declaresCap,
 
         @Schema(description = "Count of resources that define attribute groups. Present when results include resources.")

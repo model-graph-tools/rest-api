@@ -117,12 +117,12 @@ public record CatalogQuery(
         return declaresCap != null;
     }
 
-    public boolean declaresCapIsYes() {
-        return "yes".equals(declaresCap);
+    public boolean declaresCapIsTrue() {
+        return "true".equals(declaresCap);
     }
 
-    public boolean declaresCapIsNo() {
-        return "no".equals(declaresCap);
+    public boolean declaresCapIsFalse() {
+        return "false".equals(declaresCap);
     }
 
     public String declaresCapContains() {
@@ -189,12 +189,12 @@ public record CatalogQuery(
         return refsCap != null;
     }
 
-    public boolean refsCapIsYes() {
-        return "yes".equals(refsCap);
+    public boolean refsCapIsTrue() {
+        return "true".equals(refsCap);
     }
 
-    public boolean refsCapIsNo() {
-        return "no".equals(refsCap);
+    public boolean refsCapIsFalse() {
+        return "false".equals(refsCap);
     }
 
     public String refsCapContains() {

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING:** Unify all boolean facet keys from `yes`/`no` to `true`/`false` across all catalog facets (singleton, declaresCap, definesAttrGroups, required, nillable, expressions, hasAllowed, sensitive, hasRequires, hasAlternatives, refsCap, readOnly, runtimeOnly, global, hasParams, hasReturnValue)
+- **BREAKING:** Change `declaresCap` and `refsCap` query parameter values from `yes`/`no` to `true`/`false` (`contains:<text>` mode unchanged)
+
 ## [0.4.1] - 2026-11-16
 
 ### Added

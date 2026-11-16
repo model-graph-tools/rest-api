@@ -321,7 +321,7 @@ class CatalogResourceTest {
         CatalogFacets facets = new CatalogFacets(
                 Map.of("attribute", 1L), Map.of(), Map.of(),
                 null, null, null,
-                null, null, null, null, Map.of("yes", 1L, "no", 0L), null, null, null, null, null, null, null, null,
+                null, null, null, null, Map.of("true", 1L, "false", 0L), null, null, null, null, null, null, null, null,
                 null, null, null, null, null);
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
@@ -350,7 +350,7 @@ class CatalogResourceTest {
                 Map.of("operation", 5L), Map.of(), Map.of(),
                 null, null, null,
                 null, null, null, null, null, null, null, null, null, null, null, null, null,
-                Map.of("yes", 3L, "no", 2L), null, null, null, null);
+                Map.of("true", 3L, "false", 2L), null, null, null, null);
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(5);
@@ -367,7 +367,7 @@ class CatalogResourceTest {
                 .body("results[0].properties.readOnly", is(true))
                 .body("results[0].properties.global", is(true))
                 .body("results[0].properties.hasReturnValue", is(true))
-                .body("facets.readOnly.yes", is(3));
+                .body("facets.readOnly.true", is(3));
     }
 
     @Test
@@ -413,7 +413,7 @@ class CatalogResourceTest {
                         "double", 0L, "big-decimal", 0L, "list", 0L, "object", 2L)),
                 new LinkedHashMap<>(Map.of("read-write", 15L, "read-only", 5L, "metric", 0L)),
                 null, null,
-                new LinkedHashMap<>(Map.of("yes", 5L, "no", 25L)),
+                new LinkedHashMap<>(Map.of("true", 5L, "false", 25L)),
                 null, null, null, null, null, null, null, null,
                 null, null, null, null, null);
 
@@ -434,7 +434,7 @@ class CatalogResourceTest {
                 .body("facets.dataType.long", is(0))
                 .body("facets.dataType.double", is(0))
                 .body("facets.accessType.metric", is(0))
-                .body("facets.required.yes", is(5));
+                .body("facets.required.true", is(5));
     }
 
     @Test
@@ -448,7 +448,7 @@ class CatalogResourceTest {
                 Map.of("operation", 3L), Map.of(), Map.of(),
                 null, null, null,
                 null, null, null, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, Map.of("yes", 2L, "no", 1L), null);
+                null, null, null, Map.of("true", 2L, "false", 1L), null);
 
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(results);
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(3);
@@ -464,6 +464,6 @@ class CatalogResourceTest {
                 .body("results[0].type", is("operation"))
                 .body("results[0].properties.hasParams", is(true))
                 .body("results[0].properties.readOnly", is(false))
-                .body("facets.hasParams.yes", is(2));
+                .body("facets.hasParams.true", is(2));
     }
 }

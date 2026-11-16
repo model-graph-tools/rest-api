@@ -78,7 +78,7 @@ public class CatalogResource {
 
             @Parameter(
                     name = "declaresCap",
-                    description = "Resource: capability declaration filter. Three modes: 'yes' (has any capability), 'no' (has no capability), or 'contains:<text>' (capability name contains substring). Only applies to resources.",
+                    description = "Resource: capability declaration filter. Three modes: 'true' (has any capability), 'false' (has no capability), or 'contains:<text>' (capability name contains substring). Only applies to resources.",
                     example = "contains:io",
                     schema = @Schema(type = SchemaType.STRING))
             @QueryParam("declaresCap") String declaresCap,
@@ -176,8 +176,8 @@ public class CatalogResource {
 
             @Parameter(
                     name = "refsCap",
-                    description = "Attribute: capability reference filter. Three modes: 'yes' (references any capability), 'no' (references no capability), or 'contains:<text>' (capability name contains substring). Only applies to attributes.",
-                    example = "yes",
+                    description = "Attribute: capability reference filter. Three modes: 'true' (references any capability), 'false' (references no capability), or 'contains:<text>' (capability name contains substring). Only applies to attributes.",
+                    example = "true",
                     schema = @Schema(type = SchemaType.STRING))
             @QueryParam("refsCap") String refsCap,
 

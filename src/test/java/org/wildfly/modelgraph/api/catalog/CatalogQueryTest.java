@@ -288,20 +288,20 @@ class CatalogQueryTest {
     // ------------------------------------------------------ declaresCap protocol
 
     @Test
-    void declaresCapYes() {
-        CatalogQuery q = queryWith(null, null, null, null, null, null, "yes", null);
+    void declaresCapTrue() {
+        CatalogQuery q = queryWith(null, null, null, null, null, null, "true", null);
         assertTrue(q.hasDeclaresCapFilter());
-        assertTrue(q.declaresCapIsYes());
-        assertFalse(q.declaresCapIsNo());
+        assertTrue(q.declaresCapIsTrue());
+        assertFalse(q.declaresCapIsFalse());
         assertNull(q.declaresCapContains());
     }
 
     @Test
-    void declaresCapNo() {
-        CatalogQuery q = queryWith(null, null, null, null, null, null, "no", null);
+    void declaresCapFalse() {
+        CatalogQuery q = queryWith(null, null, null, null, null, null, "false", null);
         assertTrue(q.hasDeclaresCapFilter());
-        assertFalse(q.declaresCapIsYes());
-        assertTrue(q.declaresCapIsNo());
+        assertFalse(q.declaresCapIsTrue());
+        assertTrue(q.declaresCapIsFalse());
         assertNull(q.declaresCapContains());
     }
 
@@ -309,8 +309,8 @@ class CatalogQueryTest {
     void declaresCapContains() {
         CatalogQuery q = queryWith(null, null, null, null, null, null, "contains:io.buffer", null);
         assertTrue(q.hasDeclaresCapFilter());
-        assertFalse(q.declaresCapIsYes());
-        assertFalse(q.declaresCapIsNo());
+        assertFalse(q.declaresCapIsTrue());
+        assertFalse(q.declaresCapIsFalse());
         assertEquals("io.buffer", q.declaresCapContains());
     }
 
@@ -323,8 +323,8 @@ class CatalogQueryTest {
 
     @Test
     void declaresCapIsLowercased() {
-        CatalogQuery q = queryWith(null, null, null, null, null, null, "YES", null);
-        assertTrue(q.declaresCapIsYes());
+        CatalogQuery q = queryWith(null, null, null, null, null, null, "TRUE", null);
+        assertTrue(q.declaresCapIsTrue());
     }
 
     @ParameterizedTest
@@ -338,20 +338,20 @@ class CatalogQueryTest {
     // ------------------------------------------------------ refsCap protocol
 
     @Test
-    void refsCapYes() {
-        CatalogQuery q = queryWith(null, null, null, null, null, null, null, "yes");
+    void refsCapTrue() {
+        CatalogQuery q = queryWith(null, null, null, null, null, null, null, "true");
         assertTrue(q.hasRefsCapFilter());
-        assertTrue(q.refsCapIsYes());
-        assertFalse(q.refsCapIsNo());
+        assertTrue(q.refsCapIsTrue());
+        assertFalse(q.refsCapIsFalse());
         assertNull(q.refsCapContains());
     }
 
     @Test
-    void refsCapNo() {
-        CatalogQuery q = queryWith(null, null, null, null, null, null, null, "no");
+    void refsCapFalse() {
+        CatalogQuery q = queryWith(null, null, null, null, null, null, null, "false");
         assertTrue(q.hasRefsCapFilter());
-        assertFalse(q.refsCapIsYes());
-        assertTrue(q.refsCapIsNo());
+        assertFalse(q.refsCapIsTrue());
+        assertTrue(q.refsCapIsFalse());
     }
 
     @Test
@@ -370,8 +370,8 @@ class CatalogQueryTest {
 
     @Test
     void refsCapIsLowercased() {
-        CatalogQuery q = queryWith(null, null, null, null, null, null, null, "YES");
-        assertTrue(q.refsCapIsYes());
+        CatalogQuery q = queryWith(null, null, null, null, null, null, null, "TRUE");
+        assertTrue(q.refsCapIsTrue());
     }
 
     @ParameterizedTest
@@ -464,7 +464,7 @@ class CatalogQueryTest {
     void hasAnyAttributeFilterWhenRefsCapSet() {
         CatalogQuery q = fullQuery(null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, "yes", null, null, null, null, null);
+                null, null, null, null, null, "true", null, null, null, null, null);
         assertTrue(q.hasAnyAttributeFilter());
     }
 
@@ -499,7 +499,7 @@ class CatalogQueryTest {
     @Test
     void hasAnyResourceFilterWhenDeclaresCapSet() {
         CatalogQuery q = fullQuery(null, null, null, null, null,
-                null, "yes", null, null, null, null, null, null, null, null,
+                null, "true", null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null, null);
         assertTrue(q.hasAnyResourceFilter());
     }

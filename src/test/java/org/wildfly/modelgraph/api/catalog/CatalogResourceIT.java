@@ -163,7 +163,7 @@ class CatalogResourceIT {
     void declaresCapYesReturnsResourcesWithCapabilities() {
         var response = given()
                 .queryParam("type", "resource")
-                .queryParam("declaresCap", "yes")
+                .queryParam("declaresCap", "true")
                 .queryParam("limit", 50)
                 .when().get("/api/catalog")
                 .then()
@@ -739,7 +739,7 @@ class CatalogResourceIT {
     void refsCapYesReturnsAttributesReferencingCapabilities() {
         var response = given()
                 .queryParam("type", "attribute")
-                .queryParam("refsCap", "yes")
+                .queryParam("refsCap", "true")
                 .queryParam("limit", 100)
                 .when().get("/api/catalog")
                 .then()
@@ -945,8 +945,8 @@ class CatalogResourceIT {
         for (String facetName : List.of("required", "nillable", "expressions")) {
             @SuppressWarnings("unchecked")
             Map<String, Object> facet = (Map<String, Object>) facets.get(facetName);
-            assertThat(facetName + " facet should have yes key", facet, hasKey("yes"));
-            assertThat(facetName + " facet should have no key", facet, hasKey("no"));
+            assertThat(facetName + " facet should have true key", facet, hasKey("true"));
+            assertThat(facetName + " facet should have false key", facet, hasKey("false"));
         }
     }
 

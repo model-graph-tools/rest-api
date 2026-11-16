@@ -253,7 +253,7 @@ public class CatalogRepository {
             expr = cypherExpression;
         }
         query.append("\nRETURN CASE WHEN coalesce(").append(expr)
-                .append(", false) THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+                .append(", false) THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
@@ -262,8 +262,8 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
@@ -290,7 +290,7 @@ public class CatalogRepository {
             nodeVar = "a";
         }
         query.append("\nRETURN CASE WHEN ").append(nodeVar)
-                .append(".`allowed` IS NOT NULL THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+                .append(".`allowed` IS NOT NULL THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
@@ -645,9 +645,9 @@ public class CatalogRepository {
         if (!filter.hasDeclaresCapFilter()) {
             return;
         }
-        if (filter.declaresCapIsYes()) {
+        if (filter.declaresCapIsTrue()) {
             sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:DECLARES_CAPABILITY]->() }");
-        } else if (filter.declaresCapIsNo()) {
+        } else if (filter.declaresCapIsFalse()) {
             sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:DECLARES_CAPABILITY]->() }");
         } else {
             String text = filter.declaresCapContains();
@@ -724,9 +724,9 @@ public class CatalogRepository {
         if (!filter.hasRefsCapFilter()) {
             return;
         }
-        if (filter.refsCapIsYes()) {
+        if (filter.refsCapIsTrue()) {
             sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:REFERENCES_CAPABILITY]->() }");
-        } else if (filter.refsCapIsNo()) {
+        } else if (filter.refsCapIsFalse()) {
             sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:REFERENCES_CAPABILITY]->() }");
         } else {
             String text = filter.refsCapContains();
@@ -1205,7 +1205,7 @@ public class CatalogRepository {
             appendScopeWhere(sb, "node", filter);
             appendDeclaresCapWhere(sb, "node", filter);
             appendDefinesAttrGroupsWhere(sb, "node", filter);
-            sb.append("\nRETURN CASE WHEN coalesce(node.singleton, false) THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+            sb.append("\nRETURN CASE WHEN coalesce(node.singleton, false) THEN 'true' ELSE 'false' END AS value, count(*) AS count");
         } else {
             sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
             appendStabilityWhere(sb, "r", filter);
@@ -1213,7 +1213,7 @@ public class CatalogRepository {
             appendScopeWhere(sb, "r", filter);
             appendDeclaresCapWhere(sb, "r", filter);
             appendDefinesAttrGroupsWhere(sb, "r", filter);
-            sb.append("\nRETURN CASE WHEN coalesce(r.singleton, false) THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+            sb.append("\nRETURN CASE WHEN coalesce(r.singleton, false) THEN 'true' ELSE 'false' END AS value, count(*) AS count");
         }
 
         Map<String, Object> params = buildFacetParams(filter);
@@ -1221,8 +1221,8 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(sb.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
@@ -1237,7 +1237,7 @@ public class CatalogRepository {
             appendScopeWhere(sb, "node", filter);
             appendSingletonWhere(sb, "node", filter);
             appendDefinesAttrGroupsWhere(sb, "node", filter);
-            sb.append("\nRETURN CASE WHEN EXISTS { (node)-[:DECLARES_CAPABILITY]->() } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+            sb.append("\nRETURN CASE WHEN EXISTS { (node)-[:DECLARES_CAPABILITY]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
         } else {
             sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
             appendStabilityWhere(sb, "r", filter);
@@ -1245,7 +1245,7 @@ public class CatalogRepository {
             appendScopeWhere(sb, "r", filter);
             appendSingletonWhere(sb, "r", filter);
             appendDefinesAttrGroupsWhere(sb, "r", filter);
-            sb.append("\nRETURN CASE WHEN EXISTS { (r)-[:DECLARES_CAPABILITY]->() } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+            sb.append("\nRETURN CASE WHEN EXISTS { (r)-[:DECLARES_CAPABILITY]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
         }
 
         Map<String, Object> params = buildFacetParams(filter);
@@ -1253,8 +1253,8 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(sb.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
@@ -1269,7 +1269,7 @@ public class CatalogRepository {
             appendScopeWhere(sb, "node", filter);
             appendSingletonWhere(sb, "node", filter);
             appendDeclaresCapWhere(sb, "node", filter);
-            sb.append("\nRETURN CASE WHEN EXISTS { (node)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+            sb.append("\nRETURN CASE WHEN EXISTS { (node)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
         } else {
             sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment'");
             appendStabilityWhere(sb, "r", filter);
@@ -1277,7 +1277,7 @@ public class CatalogRepository {
             appendScopeWhere(sb, "r", filter);
             appendSingletonWhere(sb, "r", filter);
             appendDeclaresCapWhere(sb, "r", filter);
-            sb.append("\nRETURN CASE WHEN EXISTS { (r)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+            sb.append("\nRETURN CASE WHEN EXISTS { (r)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
         }
 
         Map<String, Object> params = buildFacetParams(filter);
@@ -1285,8 +1285,8 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(sb.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
@@ -1360,7 +1360,7 @@ public class CatalogRepository {
             nodeVar = "a";
         }
         query.append("\nRETURN CASE WHEN EXISTS { (").append(nodeVar)
-                .append(")-[:IS_SENSITIVE]->() } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+                .append(")-[:IS_SENSITIVE]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
@@ -1369,8 +1369,8 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
@@ -1405,7 +1405,7 @@ public class CatalogRepository {
             nodeVar = "a";
         }
         query.append("\nRETURN CASE WHEN EXISTS { (").append(nodeVar)
-                .append(")-[:").append(relType).append("]->() } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+                .append(")-[:").append(relType).append("]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
@@ -1414,8 +1414,8 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
@@ -1442,7 +1442,7 @@ public class CatalogRepository {
             nodeVar = "a";
         }
         query.append("\nRETURN CASE WHEN EXISTS { (").append(nodeVar)
-                .append(")-[:REFERENCES_CAPABILITY]->() } THEN 'yes' ELSE 'no' END AS value, count(*) AS count");
+                .append(")-[:REFERENCES_CAPABILITY]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
@@ -1451,8 +1451,8 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
@@ -1485,10 +1485,10 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record -> {
                 boolean value = record.get("value").asBoolean();
-                counts.put(value ? "yes" : "no", record.get("count").asLong());
+                counts.put(value ? "true" : "false", record.get("count").asLong());
             });
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
@@ -1519,10 +1519,10 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record -> {
                 boolean value = record.get("value").asBoolean();
-                counts.put(value ? "yes" : "no", record.get("count").asLong());
+                counts.put(value ? "true" : "false", record.get("count").asLong());
             });
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
@@ -1553,10 +1553,10 @@ public class CatalogRepository {
             Map<String, Long> counts = new LinkedHashMap<>();
             session.run(query.toString(), params).list().forEach(record -> {
                 boolean value = record.get("value").asBoolean();
-                counts.put(value ? "yes" : "no", record.get("count").asLong());
+                counts.put(value ? "true" : "false", record.get("count").asLong());
             });
-            counts.putIfAbsent("yes", 0L);
-            counts.putIfAbsent("no", 0L);
+            counts.putIfAbsent("true", 0L);
+            counts.putIfAbsent("false", 0L);
             return counts;
         }
     }
