@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-16
+
 ### Changed
 - **BREAKING:** Unify all boolean facet keys from `yes`/`no` to `true`/`false` across all catalog facets (singleton, declaresCap, definesAttrGroups, required, nillable, expressions, hasAllowed, sensitive, hasRequires, hasAlternatives, refsCap, readOnly, runtimeOnly, global, hasParams, hasReturnValue)
 - **BREAKING:** Change `declaresCap` and `refsCap` query parameter values from `yes`/`no` to `true`/`false` (`contains:<text>` mode unchanged)
@@ -189,7 +191,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#49]: https://github.com/model-graph-tools/rest-api/issues/49
 [#50]: https://github.com/model-graph-tools/rest-api/issues/50
 [#51]: https://github.com/model-graph-tools/rest-api/issues/51
-[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/model-graph-tools/rest-api/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/model-graph-tools/rest-api/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/model-graph-tools/rest-api/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/model-graph-tools/rest-api/compare/v0.3.2...v0.3.3
