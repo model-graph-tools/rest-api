@@ -202,7 +202,7 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
@@ -210,7 +210,7 @@ public class CatalogRepository {
             query.append("\nWITH ").append(cypherExpression.replace("a.", "node.")).append(" AS value");
         } else {
             query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "a", filter);
             appendDeprecatedWhere(query, "a", filter);
             appendScopeWhere(query, "r", filter);
@@ -238,7 +238,7 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
@@ -246,7 +246,7 @@ public class CatalogRepository {
             expr = cypherExpression.replace("a.", "node.");
         } else {
             query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "a", filter);
             appendDeprecatedWhere(query, "a", filter);
             appendScopeWhere(query, "r", filter);
@@ -275,7 +275,7 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
@@ -283,7 +283,7 @@ public class CatalogRepository {
             nodeVar = "node";
         } else {
             query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "a", filter);
             appendDeprecatedWhere(query, "a", filter);
             appendScopeWhere(query, "r", filter);
@@ -426,7 +426,7 @@ public class CatalogRepository {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node, score\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment=*/'");
+            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "node", filter);
@@ -444,7 +444,7 @@ public class CatalogRepository {
             }
             sb.append(", score");
         } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "r", filter);
             appendDeprecatedWhere(sb, "r", filter);
             appendScopeWhere(sb, "r", filter);
@@ -469,7 +469,7 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node, score\n");
             sb.append("WHERE node:Attribute\n");
-            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "r", filter);
@@ -492,7 +492,7 @@ public class CatalogRepository {
             sb.append(", score");
         } else {
             sb.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "a", filter);
             appendDeprecatedWhere(sb, "a", filter);
             appendScopeWhere(sb, "r", filter);
@@ -521,7 +521,7 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node, score\n");
             sb.append("WHERE node:Operation\n");
-            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "r", filter);
@@ -535,7 +535,7 @@ public class CatalogRepository {
             sb.append(OP_PROPS_SEARCH);
             sb.append(", score");
         } else {
-            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "o", filter);
             appendDeprecatedWhere(sb, "o", filter);
             appendScopeWhere(sb, "r", filter);
@@ -911,7 +911,7 @@ public class CatalogRepository {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment=*/'");
+            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "node", filter);
@@ -919,7 +919,7 @@ public class CatalogRepository {
             appendDeclaresCapWhere(sb, "node", filter);
             appendDefinesAttrGroupsWhere(sb, "node", filter);
         } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "r", filter);
             appendDeprecatedWhere(sb, "r", filter);
             appendScopeWhere(sb, "r", filter);
@@ -936,13 +936,13 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             sb.append("WHERE node:Attribute\n");
-            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "r", filter);
             appendAttributeFilters(sb, filter, "node");
         } else {
-            sb.append("MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "a", filter);
             appendDeprecatedWhere(sb, "a", filter);
             appendScopeWhere(sb, "r", filter);
@@ -957,13 +957,13 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             sb.append("WHERE node:Operation\n");
-            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "r", filter);
             appendOperationFilters(sb, "node", filter);
         } else {
-            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "o", filter);
             appendDeprecatedWhere(sb, "o", filter);
             appendScopeWhere(sb, "r", filter);
@@ -1024,7 +1024,7 @@ public class CatalogRepository {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment=*/'");
+            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "node", filter);
             appendSingletonWhere(sb, "node", filter);
@@ -1032,7 +1032,7 @@ public class CatalogRepository {
             appendDefinesAttrGroupsWhere(sb, "node", filter);
             sb.append("\nRETURN toLower(node.stability) AS stability");
         } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendDeprecatedWhere(sb, "r", filter);
             appendScopeWhere(sb, "r", filter);
             appendSingletonWhere(sb, "r", filter);
@@ -1048,13 +1048,13 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             sb.append("WHERE node:Attribute\n");
-            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "r", filter);
             appendAttributeFilters(sb, filter, "node");
             sb.append("\nRETURN toLower(node.stability) AS stability");
         } else {
-            sb.append("MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendDeprecatedWhere(sb, "a", filter);
             appendScopeWhere(sb, "r", filter);
             appendAttributeFilters(sb, filter, "a");
@@ -1068,13 +1068,13 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             sb.append("WHERE node:Operation\n");
-            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "r", filter);
             appendOperationFilters(sb, "node", filter);
             sb.append("\nRETURN toLower(node.stability) AS stability");
         } else {
-            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendDeprecatedWhere(sb, "o", filter);
             appendScopeWhere(sb, "r", filter);
             appendOperationFilters(sb, "o", filter);
@@ -1129,7 +1129,7 @@ public class CatalogRepository {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment=*/'");
+            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendScopeWhere(sb, "node", filter);
             appendSingletonWhere(sb, "node", filter);
@@ -1137,7 +1137,7 @@ public class CatalogRepository {
             appendDefinesAttrGroupsWhere(sb, "node", filter);
             sb.append("\nRETURN EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated");
         } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "r", filter);
             appendScopeWhere(sb, "r", filter);
             appendSingletonWhere(sb, "r", filter);
@@ -1153,13 +1153,13 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             sb.append("WHERE node:Attribute\n");
-            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendScopeWhere(sb, "r", filter);
             appendAttributeFilters(sb, filter, "node");
             sb.append("\nRETURN EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated");
         } else {
-            sb.append("MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "a", filter);
             appendScopeWhere(sb, "r", filter);
             appendAttributeFilters(sb, filter, "a");
@@ -1173,13 +1173,13 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             sb.append("WHERE node:Operation\n");
-            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendScopeWhere(sb, "r", filter);
             appendOperationFilters(sb, "node", filter);
             sb.append("\nRETURN EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated");
         } else {
-            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "o", filter);
             appendScopeWhere(sb, "r", filter);
             appendOperationFilters(sb, "o", filter);
@@ -1217,7 +1217,7 @@ public class CatalogRepository {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment=*/'");
+            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "node", filter);
@@ -1225,7 +1225,7 @@ public class CatalogRepository {
             appendDefinesAttrGroupsWhere(sb, "node", filter);
             sb.append("\nRETURN CASE WHEN coalesce(node.singleton, false) THEN 'true' ELSE 'false' END AS value, count(*) AS count");
         } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "r", filter);
             appendDeprecatedWhere(sb, "r", filter);
             appendScopeWhere(sb, "r", filter);
@@ -1249,7 +1249,7 @@ public class CatalogRepository {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment=*/'");
+            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "node", filter);
@@ -1257,7 +1257,7 @@ public class CatalogRepository {
             appendDefinesAttrGroupsWhere(sb, "node", filter);
             sb.append("\nRETURN CASE WHEN EXISTS { (node)-[:DECLARES_CAPABILITY]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
         } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "r", filter);
             appendDeprecatedWhere(sb, "r", filter);
             appendScopeWhere(sb, "r", filter);
@@ -1281,7 +1281,7 @@ public class CatalogRepository {
         StringBuilder sb = new StringBuilder();
         if (filter.hasSearchQuery()) {
             sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment=*/'");
+            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "node", filter);
             appendDeprecatedWhere(sb, "node", filter);
             appendScopeWhere(sb, "node", filter);
@@ -1289,7 +1289,7 @@ public class CatalogRepository {
             appendDeclaresCapWhere(sb, "node", filter);
             sb.append("\nRETURN CASE WHEN EXISTS { (node)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
         } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(sb, "r", filter);
             appendDeprecatedWhere(sb, "r", filter);
             appendScopeWhere(sb, "r", filter);
@@ -1316,7 +1316,7 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
@@ -1324,7 +1324,7 @@ public class CatalogRepository {
             query.append("\nWITH ").append(dataTypeCaseExpression("node")).append(" AS value");
         } else {
             query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "a", filter);
             appendDeprecatedWhere(query, "a", filter);
             appendScopeWhere(query, "r", filter);
@@ -1363,7 +1363,7 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
@@ -1371,7 +1371,7 @@ public class CatalogRepository {
             nodeVar = "node";
         } else {
             query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "a", filter);
             appendDeprecatedWhere(query, "a", filter);
             appendScopeWhere(query, "r", filter);
@@ -1408,7 +1408,7 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
@@ -1416,7 +1416,7 @@ public class CatalogRepository {
             nodeVar = "node";
         } else {
             query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "a", filter);
             appendDeprecatedWhere(query, "a", filter);
             appendScopeWhere(query, "r", filter);
@@ -1445,7 +1445,7 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
@@ -1453,7 +1453,7 @@ public class CatalogRepository {
             nodeVar = "node";
         } else {
             query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "a", filter);
             appendDeprecatedWhere(query, "a", filter);
             appendScopeWhere(query, "r", filter);
@@ -1483,14 +1483,14 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             query.append("WHERE node:Operation\n");
-            query.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
             appendOperationFiltersExcluding(query, "node", filter, facetName);
             query.append("\nRETURN coalesce(node.").append(propertyName).append(", false) AS value, count(*) AS count");
         } else {
-            query.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "o", filter);
             appendDeprecatedWhere(query, "o", filter);
             appendScopeWhere(query, "r", filter);
@@ -1517,14 +1517,14 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             query.append("WHERE node:Operation\n");
-            query.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
             appendOperationFiltersExcluding(query, "node", filter, "hasParams");
             query.append("\nRETURN EXISTS { (node)-[:ACCEPTS]->() } AS value, count(*) AS count");
         } else {
-            query.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "o", filter);
             appendDeprecatedWhere(query, "o", filter);
             appendScopeWhere(query, "r", filter);
@@ -1551,14 +1551,14 @@ public class CatalogRepository {
         if (filter.hasSearchQuery()) {
             query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
             query.append("WHERE node:Operation\n");
-            query.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "node", filter);
             appendDeprecatedWhere(query, "node", filter);
             appendScopeWhere(query, "r", filter);
             appendOperationFiltersExcluding(query, "node", filter, "hasReturnValue");
             query.append("\nRETURN node.`return-value` IS NOT NULL AS value, count(*) AS count");
         } else {
-            query.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment=*/'");
+            query.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
             appendStabilityWhere(query, "o", filter);
             appendDeprecatedWhere(query, "o", filter);
             appendScopeWhere(query, "r", filter);
