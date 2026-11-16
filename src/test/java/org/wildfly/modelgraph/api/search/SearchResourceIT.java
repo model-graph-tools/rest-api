@@ -51,7 +51,7 @@ class SearchResourceIT {
                 .then()
                 .statusCode(200)
                 .body("results.findAll { it.address != null }.address",
-                        everyItem(not(startsWith("/deployment"))));
+                        everyItem(not(startsWith("/deployment="))));
     }
 
     @Test
@@ -225,7 +225,7 @@ class SearchResourceIT {
                 for (Map<String, String> ref : providedBy) {
                     String address = ref.get("address");
                     assertThat("Capability '" + cap.get("name") + "' providedBy should not include deployments",
-                            address, not(startsWith("/deployment")));
+                            address, not(startsWith("/deployment=")));
                 }
             }
         }

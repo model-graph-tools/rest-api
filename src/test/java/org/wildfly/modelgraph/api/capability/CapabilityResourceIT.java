@@ -39,7 +39,7 @@ class CapabilityResourceIT {
                 .then()
                 .statusCode(200)
                 .body("references.resourceAddress",
-                        everyItem(not(startsWith("/deployment"))));
+                        everyItem(not(startsWith("/deployment="))));
     }
 
     @Test

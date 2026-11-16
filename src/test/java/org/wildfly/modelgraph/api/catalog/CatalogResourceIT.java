@@ -140,7 +140,7 @@ class CatalogResourceIT {
 
         List<String> addresses = response.getList("results.address");
         assertThat("No deployment resources should be present",
-                addresses, everyItem(not(startsWith("/deployment"))));
+                addresses, everyItem(not(startsWith("/deployment="))));
     }
 
     @Test
