@@ -410,7 +410,7 @@ class CatalogResourceTest {
                 new LinkedHashMap<>(Map.of("true", 0L, "false", 30L)),
                 null, null, null,
                 new LinkedHashMap<>(Map.of("string", 10L, "int", 5L, "long", 0L, "boolean", 3L,
-                        "double", 0L, "big-decimal", 0L, "list", 0L, "object", 2L)),
+                        "double", 0L, "big-decimal", 0L, "list-simple", 0L, "list-object", 0L, "map", 0L, "object", 2L)),
                 new LinkedHashMap<>(Map.of("read-write", 15L, "read-only", 5L, "metric", 0L)),
                 null, null,
                 new LinkedHashMap<>(Map.of("true", 5L, "false", 25L)),
