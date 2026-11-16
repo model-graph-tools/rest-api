@@ -11,7 +11,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Properties specific to attribute results")
 public record AttributeProperties(
-        @Schema(description = "Data type of the attribute", examples = {"string"}, enumeration = {"string", "boolean", "int", "long", "object", "list", "double", "bytes", "complex"})
+        @Schema(description = "Data type of the attribute", examples = {"string"}, enumeration = {"string", "boolean", "int", "long", "double", "big-decimal", "bytes", "property", "list-simple", "list-object", "map", "object"})
         String dataType,
 
         @Schema(description = "Access type of the attribute", examples = {"read-write"}, enumeration = {"read-write", "read-only", "metric"})

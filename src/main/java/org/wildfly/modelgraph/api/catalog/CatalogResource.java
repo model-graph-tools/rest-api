@@ -92,9 +92,9 @@ public class CatalogResource {
 
             @Parameter(
                     name = "dataType",
-                    description = "Attribute: data type filter. Comma-separated values with OR semantics. The value 'complex' matches attributes with CONSISTS_OF sub-attributes. Only applies to attributes.",
+                    description = "Attribute: data type filter. Comma-separated values with OR semantics. Only applies to attributes.",
                     example = "string,boolean",
-                    schema = @Schema(type = SchemaType.STRING, enumeration = {"string", "boolean", "int", "long", "object", "list", "double", "bytes", "complex"}))
+                    schema = @Schema(type = SchemaType.STRING, enumeration = {"string", "boolean", "int", "long", "double", "big-decimal", "bytes", "property", "list-simple", "list-object", "map", "object"}))
             @QueryParam("dataType") String dataType,
 
             @Parameter(

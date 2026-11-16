@@ -768,10 +768,10 @@ class CatalogResourceIT {
     }
 
     @Test
-    void dataTypeComplexReturnsComplexAttributes() {
+    void dataTypeObjectReturnsStructuredAttributes() {
         var response = given()
                 .queryParam("type", "attribute")
-                .queryParam("dataType", "complex")
+                .queryParam("dataType", "object")
                 .queryParam("limit", 100)
                 .when().get("/api/catalog")
                 .then()
@@ -783,15 +783,15 @@ class CatalogResourceIT {
             assertThat("All results should be attributes", types, everyItem(is("attribute")));
 
             List<String> dataTypes = response.getList("results.properties.dataType");
-            assertThat("All results should have dataType complex", dataTypes, everyItem(is("complex")));
+            assertThat("All results should have dataType object", dataTypes, everyItem(is("object")));
         }
     }
 
     @Test
-    void dataTypeStringAndComplexReturnsOrSemantics() {
+    void dataTypeStringAndObjectReturnsOrSemantics() {
         var response = given()
                 .queryParam("type", "attribute")
-                .queryParam("dataType", "string,complex")
+                .queryParam("dataType", "string,object")
                 .queryParam("limit", 100)
                 .when().get("/api/catalog")
                 .then()
@@ -802,8 +802,65 @@ class CatalogResourceIT {
         assertThat("All results should be attributes", types, everyItem(is("attribute")));
 
         List<String> dataTypes = response.getList("results.properties.dataType");
-        assertThat("All results should have dataType string or complex",
-                dataTypes, everyItem(oneOf("string", "complex")));
+        assertThat("All results should have dataType string or object",
+                dataTypes, everyItem(oneOf("string", "object")));
+    }
+
+    @Test
+    void dataTypeListSimpleReturnsListAttributes() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("dataType", "list-simple")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        if (!types.isEmpty()) {
+            assertThat("All results should be attributes", types, everyItem(is("attribute")));
+            List<String> dataTypes = response.getList("results.properties.dataType");
+            assertThat("All results should have dataType list-simple", dataTypes, everyItem(is("list-simple")));
+        }
+    }
+
+    @Test
+    void dataTypeMapReturnsDynamicKeyAttributes() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("dataType", "map")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        if (!types.isEmpty()) {
+            assertThat("All results should be attributes", types, everyItem(is("attribute")));
+            List<String> dataTypes = response.getList("results.properties.dataType");
+            assertThat("All results should have dataType map", dataTypes, everyItem(is("map")));
+        }
+    }
+
+    @Test
+    void dataTypeListSimpleAndStringReturnsOrSemantics() {
+        var response = given()
+                .queryParam("type", "attribute")
+                .queryParam("dataType", "list-simple,string")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be attributes", types, everyItem(is("attribute")));
+
+        List<String> dataTypes = response.getList("results.properties.dataType");
+        assertThat("All results should have dataType list-simple or string",
+                dataTypes, everyItem(oneOf("list-simple", "string")));
     }
 
     @Test
@@ -882,7 +939,7 @@ class CatalogResourceIT {
 
         Map<String, Object> dataTypeFacets = response.getMap("facets.dataType");
         for (String key : List.of("string", "int", "long", "boolean", "double",
-                "big-decimal", "list", "object", "bytes", "property", "complex")) {
+                "big-decimal", "bytes", "property", "list-simple", "list-object", "map", "object")) {
             assertThat("dataType facet should have " + key + " key", dataTypeFacets, hasKey(key));
         }
     }
