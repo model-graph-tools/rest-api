@@ -30,7 +30,7 @@ public class SearchResource {
     @GET
     @Operation(
             summary = "Search the management model",
-            description = "Unified full-text search across resources, attributes, capabilities, and operations. Excludes deployment-scoped sub-resources but includes /deployment=* itself.")
+            description = "Unified full-text search across resources, attributes, capabilities, and operations.")
     @APIResponse(
             responseCode = "200",
             description = "Search results",

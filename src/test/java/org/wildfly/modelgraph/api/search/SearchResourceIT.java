@@ -43,18 +43,6 @@ class SearchResourceIT {
     }
 
     @Test
-    void searchExcludesDeploymentResources() {
-        given()
-                .queryParam("q", "subsystem")
-                .queryParam("limit", 100)
-                .when().get("/api/search")
-                .then()
-                .statusCode(200)
-                .body("results.findAll { it.address != null }.address",
-                        everyItem(not(startsWith("/deployment="))));
-    }
-
-    @Test
     void searchWithLimitRespectsLimitPerType() {
         var results = given()
                 .queryParam("q", "pool")
@@ -204,31 +192,6 @@ class SearchResourceIT {
         boolean anyHasProvidedBy = capabilities.stream()
                 .anyMatch(c -> c.get("providedBy") != null);
         assertThat("At least one capability should have providedBy resources", anyHasProvidedBy, is(true));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    void searchForCapabilityExcludesDeploymentResourcesInProvidedBy() {
-        var results = given()
-                .queryParam("q", "batch")
-                .queryParam("limit", 100)
-                .when().get("/api/search")
-                .then()
-                .statusCode(200)
-                .extract().jsonPath();
-
-        List<Map<String, Object>> capabilities = results.getList(
-                "results.findAll { it.type == 'capability' }");
-        for (Map<String, Object> cap : capabilities) {
-            List<Map<String, String>> providedBy = (List<Map<String, String>>) cap.get("providedBy");
-            if (providedBy != null) {
-                for (Map<String, String> ref : providedBy) {
-                    String address = ref.get("address");
-                    assertThat("Capability '" + cap.get("name") + "' providedBy should not include deployments",
-                            address, not(startsWith("/deployment=")));
-                }
-            }
-        }
     }
 
     @Test

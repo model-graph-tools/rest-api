@@ -33,16 +33,6 @@ class CapabilityResourceIT {
     }
 
     @Test
-    void capabilityReferencesExcludeDeployments() {
-        given()
-                .when().get("/api/capability/org.wildfly.data-source/references")
-                .then()
-                .statusCode(200)
-                .body("references.resourceAddress",
-                        everyItem(not(startsWith("/deployment="))));
-    }
-
-    @Test
     void unknownCapabilityReturnsEmptyReferences() {
         given()
                 .when().get("/api/capability/org.nonexistent.capability/references")

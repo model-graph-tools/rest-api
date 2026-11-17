@@ -56,7 +56,7 @@ The MGT Neo4j database contains these node types and relationships:
 
 halOP converts search results into navigation by passing the `address` field (e.g., `/subsystem=io/buffer-pool=*`) to `AddressTemplate.ofTrusted(address)` and then `RouteRegistry.goTo(template)`. The leading `/` in addresses is handled transparently by `AddressTemplate`. See [hal/foundation#288](https://github.com/hal/foundation/issues/288) sections 4-5 for the full routing design.
 
-Search results should exclude deployment-scoped resources (`NOT r.address STARTS WITH '/deployment'`) since they aren't navigable in halOP's configuration UI.
+Search results include deployment-scoped resources. halOP handles non-navigable addresses gracefully.
 
 ### Release and Container Integration
 

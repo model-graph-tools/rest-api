@@ -16,7 +16,6 @@ public class CapabilityRepository {
 
     private static final String CAPABILITY_REFERENCES_QUERY = """
             MATCH (c:Capability {name: $name})<-[:REFERENCES_CAPABILITY]-(a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource)
-            WHERE NOT r.address STARTS WITH '/deployment='
             RETURN a.name AS attributeName, a.stability AS attributeStability,
                    r.name AS resourceName, r.address AS resourceAddress, r.stability AS resourceStability
             ORDER BY r.address
