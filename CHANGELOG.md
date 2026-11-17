@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING:** Remove `address` field from catalog results — clients can compose it from `resourceAddress` and `name`
+- **BREAKING:** Change `resourceAddress` to always be present for resources, attributes, and operations (null only for capabilities); previously it was null for resources
+- **BREAKING:** Rename sort field from `address` to `resourceAddress`
+
 ## [0.6.0] - 2026-11-17
 
 ### Added
