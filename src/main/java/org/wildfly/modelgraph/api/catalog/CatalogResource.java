@@ -218,9 +218,9 @@ public class CatalogResource {
 
             @Parameter(
                     name = "sort",
-                    description = "Sort field. When sorting by address, null values sort last regardless of direction.",
+                    description = "Sort field. When sorting by resourceAddress, null values sort last regardless of direction.",
                     example = "name",
-                    schema = @Schema(type = SchemaType.STRING, defaultValue = "name", enumeration = {"name", "type", "address", "stability"}))
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = "name", enumeration = {"name", "type", "resourceAddress", "stability"}))
             @QueryParam("sort") String sort,
 
             @Parameter(

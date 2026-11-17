@@ -340,7 +340,7 @@ class CatalogRepositoryTest {
     @Test
     void resourceOnlyDefaultsSortToAddress() {
         String query = repository.buildResultQuery(queryWith(null, "resource", null, null));
-        assertTrue(query.contains("ORDER BY CASE WHEN address IS NULL"), "resource-only defaults to address sort");
+        assertTrue(query.contains("ORDER BY CASE WHEN resourceAddress IS NULL"), "resource-only defaults to resourceAddress sort");
     }
 
     // ------------------------------------------------------ empty branches
@@ -382,10 +382,10 @@ class CatalogRepositoryTest {
         CatalogQuery filter = CatalogQuery.of(null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null, null,
-                "address", null, null, null);
+                "resourceAddress", null, null, null);
         String query = repository.buildResultQuery(filter);
         String orderByLine = extractOrderByLine(query);
-        assertTrue(orderByLine.contains("CASE WHEN address IS NULL"), "address sort must handle nulls");
+        assertTrue(orderByLine.contains("CASE WHEN resourceAddress IS NULL"), "resourceAddress sort must handle nulls");
     }
 
     @Test

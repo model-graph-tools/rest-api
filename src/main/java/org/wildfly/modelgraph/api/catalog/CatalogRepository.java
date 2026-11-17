@@ -23,7 +23,7 @@ public class CatalogRepository {
 
     private static final Logger LOG = Logger.getLogger(CatalogRepository.class);
     private static final String SEARCH_INDEX = LuceneUtils.SEARCH_INDEX;
-    private static final Set<String> SAFE_SORT_FIELDS = Set.of("name", "type", "address", "stability", "score");
+    private static final Set<String> SAFE_SORT_FIELDS = Set.of("name", "type", "resourceAddress", "stability", "score");
     private static final Set<String> SAFE_ORDER_DIRECTIONS = Set.of("ASC", "DESC");
     private static final Set<String> REFINED_DATA_TYPES = Set.of("list-simple", "list-object", "map", "object");
     private static final String NULL_OP_PROPS = ", null AS readOnly, null AS runtimeOnly, null AS isGlobal, null AS hasParams, null AS hasReturnValue";
@@ -272,7 +272,7 @@ public class CatalogRepository {
         boolean includesOperation = effectiveIncludesOperation(filter);
         boolean includesCapability = effectiveIncludesCapability(filter);
         StringBuilder returnClause = new StringBuilder();
-        returnClause.append("RETURN type, name, description, address, resourceAddress, stability, deprecated, properties");
+        returnClause.append("RETURN type, name, description, resourceAddress, stability, deprecated, properties");
         if (includesResource) {
             returnClause.append(", singleton, capabilities, definesAttrGroups");
         }
@@ -315,8 +315,8 @@ public class CatalogRepository {
 
         if ("score".equals(sort)) {
             query.append("ORDER BY score DESC, name ASC\n");
-        } else if ("address".equals(sort)) {
-            query.append("ORDER BY CASE WHEN address IS NULL THEN 1 ELSE 0 END, address ")
+        } else if ("resourceAddress".equals(sort)) {
+            query.append("ORDER BY CASE WHEN resourceAddress IS NULL THEN 1 ELSE 0 END, resourceAddress ")
                     .append(dir).append(", name ASC\n");
         } else {
             query.append("ORDER BY ").append(sort).append(" ").append(dir).append("\n");
@@ -369,7 +369,7 @@ public class CatalogRepository {
         }
 
         if (branches.isEmpty()) {
-            query.append("RETURN null AS type, null AS name, null AS description, null AS address, ");
+            query.append("RETURN null AS type, null AS name, null AS description, ");
             query.append("null AS resourceAddress, null AS stability, false AS deprecated, null AS properties");
             if (filter.hasSearchQuery()) {
                 query.append(", 0.0 AS score");
@@ -393,7 +393,7 @@ public class CatalogRepository {
         appendDeclaresCapWhere(q, v, filter);
         appendDefinesAttrGroupsWhere(q, v, filter);
         q.returning("'resource' AS type, " + v + ".name AS name, " + v + ".description AS description, "
-                + v + ".address AS address, null AS resourceAddress, toLower(" + v + ".stability) AS stability, "
+                + v + ".address AS resourceAddress, toLower(" + v + ".stability) AS stability, "
                 + "EXISTS { (" + v + ")-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties, "
                 + "coalesce(" + v + ".singleton, false) AS singleton, "
                 + "[(" + v + ")-[:DECLARES_CAPABILITY]->(cap) | cap.name] AS capabilities, "
@@ -419,7 +419,7 @@ public class CatalogRepository {
         appendScopeWhere(q, "r", filter);
         appendAttributeFilters(q, filter, v);
         q.returning("'attribute' AS type, " + v + ".name AS name, " + v + ".description AS description, "
-                + "r.address + '/' + " + v + ".name AS address, r.address AS resourceAddress, toLower(" + v + ".stability) AS stability, "
+                + "r.address AS resourceAddress, toLower(" + v + ".stability) AS stability, "
                 + "EXISTS { (" + v + ")-[:DEPRECATED_SINCE]->() } AS deprecated, "
                 + "{dataType: " + dataTypeCaseExpression(v) + ", accessType: toLower(" + v + ".`access-type`), "
                 + "storage: toLower(" + v + ".storage), restart: toLower(" + v + ".`restart-required`), "
@@ -450,7 +450,7 @@ public class CatalogRepository {
         appendScopeWhere(q, "r", filter);
         appendOperationFilters(q, v, filter);
         q.returning("'operation' AS type, " + v + ".name AS name, " + v + ".description AS description, "
-                + "r.address + '/' + " + v + ".name AS address, r.address AS resourceAddress, toLower(" + v + ".stability) AS stability, "
+                + "r.address AS resourceAddress, toLower(" + v + ".stability) AS stability, "
                 + "EXISTS { (" + v + ")-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties");
         if (includesResource) {
             q.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
@@ -503,7 +503,7 @@ public class CatalogRepository {
             }
         }
         q.returning("'capability' AS type, c.name AS name, null AS description, "
-                + "null AS address, null AS resourceAddress, toLower(c.stability) AS stability, "
+                + "null AS resourceAddress, toLower(c.stability) AS stability, "
                 + "false AS deprecated, null AS properties");
         if (includesResource) {
             q.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
@@ -1451,7 +1451,6 @@ public class CatalogRepository {
                 type,
                 record.get("name").asString(null),
                 record.get("description").asString(null),
-                record.get("address").asString(null),
                 record.get("resourceAddress").asString(null),
                 record.get("stability").asString(null),
                 record.get("deprecated").asBoolean(false),

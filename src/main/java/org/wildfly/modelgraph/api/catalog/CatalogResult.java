@@ -20,10 +20,7 @@ public record CatalogResult(
         @Schema(description = "Element description (may be null)", examples = {"The JDBC driver connection URL"})
         String description,
 
-        @Schema(description = "Full address. For attributes: includes attribute name segment. Null for some capabilities.", examples = {"/subsystem=datasources/data-source=*/connection-url"})
-        String address,
-
-        @Schema(description = "Parent resource address without the attribute/operation name. Present for attributes and operations.", examples = {"/subsystem=datasources/data-source=*"})
+        @Schema(description = "Resource address. For resources: the resource's own address. For attributes and operations: the parent resource address. Null for capabilities.", examples = {"/subsystem=datasources/data-source=*"})
         String resourceAddress,
 
         @Schema(description = "Stability level", examples = {"default"}, enumeration = {"default", "community", "preview", "experimental"})

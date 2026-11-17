@@ -111,10 +111,10 @@ class CatalogQueryTest {
     // ------------------------------------------------------ sort validation
 
     @ParameterizedTest(name = "sort \"{0}\" is accepted")
-    @ValueSource(strings = {"name", "type", "address", "stability", "NAME", " Address "})
+    @ValueSource(strings = {"name", "type", "resourceAddress", "stability", "NAME", " ResourceAddress "})
     void sortAcceptsValidFields(String sort) {
         CatalogQuery q = queryWith(null, null, sort, null, null, null, null, null);
-        assertTrue(List.of("name", "type", "address", "stability").contains(q.sort()));
+        assertTrue(List.of("name", "type", "resourceAddress", "stability").contains(q.sort()));
     }
 
     @Test
@@ -138,7 +138,7 @@ class CatalogQueryTest {
     @Test
     void sortDefaultsToAddressWhenTypeIsResourceOnly() {
         CatalogQuery q = queryWith(null, "resource", null, null, null, null, null, null);
-        assertEquals("address", q.sort());
+        assertEquals("resourceAddress", q.sort());
     }
 
     @Test
@@ -593,7 +593,7 @@ class CatalogQueryTest {
             "1=1 OR 1=1",
             "name\nMATCH (n) DETACH DELETE n",
             "name\"; DROP DATABASE neo4j;//",
-            "address DESC, name ASC\nCALL apoc.export.csv.all()",
+            "resourceAddress DESC, name ASC\nCALL apoc.export.csv.all()",
             "') OR 1=1 RETURN n//"
     })
     void sortRejectsInjectionAttempts(String maliciousSort) {

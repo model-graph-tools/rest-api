@@ -2,6 +2,7 @@ package org.wildfly.modelgraph.api.catalog;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /** Parsed and validated query parameters for the catalog endpoint. */
@@ -259,18 +260,24 @@ public record CatalogQuery(
                 .toList();
     }
 
+    private static final Map<String, String> VALID_SORT_FIELDS = Map.of(
+            "name", "name",
+            "type", "type",
+            "resourceaddress", "resourceAddress",
+            "stability", "stability");
+
     private static String parseSort(String sort, String q, List<String> types) {
         if (sort != null && !sort.isBlank()) {
-            String lower = sort.strip().toLowerCase();
-            if (List.of("name", "type", "address", "stability").contains(lower)) {
-                return lower;
+            String canonical = VALID_SORT_FIELDS.get(sort.strip().toLowerCase());
+            if (canonical != null) {
+                return canonical;
             }
         }
         if (q != null) {
             return "score";
         }
         if (types.size() == 1 && types.contains("resource")) {
-            return "address";
+            return "resourceAddress";
         }
         return DEFAULT_SORT;
     }

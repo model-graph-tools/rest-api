@@ -25,9 +25,9 @@ class CatalogResourceTest {
     @Test
     void unfilteredRequestReturnsResults() {
         List<CatalogResult> results = List.of(
-                new CatalogResult("resource", "buffer-pool", "A buffer pool", "/subsystem=io/buffer-pool=*",
-                        null, "default", false, null),
-                new CatalogResult("attribute", "enabled", "Whether enabled", "/subsystem=io/buffer-pool=*/enabled",
+                new CatalogResult("resource", "buffer-pool", "A buffer pool",
+                        "/subsystem=io/buffer-pool=*", "default", false, null),
+                new CatalogResult("attribute", "enabled", "Whether enabled",
                         "/subsystem=io/buffer-pool=*", "default", false,
                         new AttributeProperties("boolean", "read-write", "configuration", "all-services",
                                 false, true, true, false, null, null)));
@@ -62,8 +62,8 @@ class CatalogResourceTest {
     @Test
     void typeFilterNarrowsResults() {
         List<CatalogResult> results = List.of(
-                new CatalogResult("resource", "buffer-pool", "A buffer pool", "/subsystem=io/buffer-pool=*",
-                        null, "default", false, null));
+                new CatalogResult("resource", "buffer-pool", "A buffer pool",
+                        "/subsystem=io/buffer-pool=*", "default", false, null));
         CatalogFacets facets = CatalogFacets.commonOnly(
                 Map.of("resource", 10L),
                 Map.of("default", 10L),
@@ -131,8 +131,8 @@ class CatalogResourceTest {
     @Test
     void resourceResultsIncludeProperties() {
         List<CatalogResult> results = List.of(
-                new CatalogResult("resource", "buffer-pool", "A buffer pool", "/subsystem=io/buffer-pool=*",
-                        null, "default", false, new ResourceProperties(true, List.of(), true)));
+                new CatalogResult("resource", "buffer-pool", "A buffer pool",
+                        "/subsystem=io/buffer-pool=*", "default", false, new ResourceProperties(true, List.of(), true)));
         CatalogFacets facets = CatalogFacets.commonOnly(
                 Map.of("resource", 1L),
                 Map.of("default", 1L),
@@ -283,11 +283,11 @@ class CatalogResourceTest {
     @Test
     void dataTypeMultiValueFilterPassesThrough() {
         List<CatalogResult> results = List.of(
-                new CatalogResult("attribute", "max-threads", "Maximum threads", "/subsystem=io/worker=*/max-threads",
+                new CatalogResult("attribute", "max-threads", "Maximum threads",
                         "/subsystem=io/worker=*", "default", false,
                         new AttributeProperties("int", "read-write", "configuration", "all-services",
                                 false, false, true, false, null, null)),
-                new CatalogResult("attribute", "enabled", "Whether enabled", "/subsystem=io/buffer-pool=*/enabled",
+                new CatalogResult("attribute", "enabled", "Whether enabled",
                         "/subsystem=io/buffer-pool=*", "default", false,
                         new AttributeProperties("boolean", "read-write", "configuration", "all-services",
                                 false, true, true, false, null, null)));
@@ -314,7 +314,7 @@ class CatalogResourceTest {
     @Test
     void requiredBooleanFilterPassesThrough() {
         List<CatalogResult> results = List.of(
-                new CatalogResult("attribute", "name", "The name", "/subsystem=datasources/data-source=*/name",
+                new CatalogResult("attribute", "name", "The name",
                         "/subsystem=datasources/data-source=*", "default", false,
                         new AttributeProperties("string", "read-write", "configuration", "all-services",
                                 true, false, true, false, null, null)));
@@ -343,7 +343,6 @@ class CatalogResourceTest {
     void readOnlyBooleanFilterPassesThrough() {
         List<CatalogResult> results = List.of(
                 new CatalogResult("operation", "read-resource", "Reads resource",
-                        "/subsystem=io/buffer-pool=*/read-resource",
                         "/subsystem=io/buffer-pool=*", "default", false,
                         new OperationProperties(true, false, true, false, true)));
         CatalogFacets facets = new CatalogFacets(
@@ -441,7 +440,6 @@ class CatalogResourceTest {
     void hasParamsBooleanFilterPassesThrough() {
         List<CatalogResult> results = List.of(
                 new CatalogResult("operation", "add", "Adds resource",
-                        "/subsystem=io/buffer-pool=*/add",
                         "/subsystem=io/buffer-pool=*", "default", false,
                         new OperationProperties(false, false, false, true, false)));
         CatalogFacets facets = new CatalogFacets(

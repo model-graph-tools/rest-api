@@ -365,7 +365,7 @@ class CatalogResourceIT {
                 .body("results", not(empty()))
                 .extract().jsonPath();
 
-        List<String> addresses = response.getList("results.address");
+        List<String> addresses = response.getList("results.resourceAddress");
         assertThat("All resource addresses should start with /subsystem=io",
                 addresses, everyItem(startsWith("/subsystem=io")));
     }
@@ -383,7 +383,7 @@ class CatalogResourceIT {
                 .body("results", not(empty()))
                 .extract().jsonPath();
 
-        List<String> addresses = response.getList("results.address");
+        List<String> addresses = response.getList("results.resourceAddress");
         for (int i = 1; i < addresses.size(); i++) {
             assertThat("Results should be sorted by address ascending",
                     addresses.get(i).compareTo(addresses.get(i - 1)), greaterThanOrEqualTo(0));
@@ -394,7 +394,7 @@ class CatalogResourceIT {
     void sortByAddressDescSortsCorrectly() {
         var response = given()
                 .queryParam("type", "resource")
-                .queryParam("sort", "address")
+                .queryParam("sort", "resourceAddress")
                 .queryParam("order", "desc")
                 .queryParam("limit", 10)
                 .when().get("/api/catalog")
@@ -403,7 +403,7 @@ class CatalogResourceIT {
                 .body("results", not(empty()))
                 .extract().jsonPath();
 
-        List<String> addresses = response.getList("results.address");
+        List<String> addresses = response.getList("results.resourceAddress");
         List<String> nonNullAddresses = addresses.stream()
                 .filter(a -> a != null)
                 .toList();
@@ -417,7 +417,7 @@ class CatalogResourceIT {
     void nullAddressesSortLastRegardlessOfDirection() {
         var responseAsc = given()
                 .queryParam("type", "resource,capability")
-                .queryParam("sort", "address")
+                .queryParam("sort", "resourceAddress")
                 .queryParam("order", "asc")
                 .queryParam("limit", 200)
                 .when().get("/api/catalog")
@@ -425,7 +425,7 @@ class CatalogResourceIT {
                 .statusCode(200)
                 .extract().jsonPath();
 
-        List<String> addressesAsc = responseAsc.getList("results.address");
+        List<String> addressesAsc = responseAsc.getList("results.resourceAddress");
         boolean seenNull = false;
         for (String addr : addressesAsc) {
             if (addr == null) {
@@ -437,7 +437,7 @@ class CatalogResourceIT {
 
         var responseDesc = given()
                 .queryParam("type", "resource,capability")
-                .queryParam("sort", "address")
+                .queryParam("sort", "resourceAddress")
                 .queryParam("order", "desc")
                 .queryParam("limit", 200)
                 .when().get("/api/catalog")
@@ -445,7 +445,7 @@ class CatalogResourceIT {
                 .statusCode(200)
                 .extract().jsonPath();
 
-        List<String> addressesDesc = responseDesc.getList("results.address");
+        List<String> addressesDesc = responseDesc.getList("results.resourceAddress");
         seenNull = false;
         for (String addr : addressesDesc) {
             if (addr == null) {
