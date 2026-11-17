@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add `CypherQuery` fluent builder for Cypher query construction with automatic WHERE/AND clause chaining
+- Add `CapabilityProperties` with `declaringResources` field listing all resource addresses that declare a capability in catalog results
+
+### Changed
+- Refactor `CatalogRepository` to use `CypherQuery`, eliminating search/non-search branch duplication and the mutable `boolean[]` WHERE-tracking hack
+- Remove deployment-scoped resource exclusion from search, catalog, and capability reference queries — halOP handles non-navigable addresses gracefully
+
 ## [0.5.3] - 2026-11-17
 
 ### Changed

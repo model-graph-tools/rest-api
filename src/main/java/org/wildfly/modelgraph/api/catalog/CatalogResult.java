@@ -32,6 +32,6 @@ public record CatalogResult(
         @Schema(description = "Whether the element is deprecated")
         boolean deprecated,
 
-        @Schema(description = "Type-specific properties. Present for resources, attributes, and operations. Null for capabilities.")
+        @Schema(description = "Type-specific properties, discriminated by result type")
         Properties properties) {
 }

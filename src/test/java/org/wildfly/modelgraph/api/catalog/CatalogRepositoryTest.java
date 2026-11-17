@@ -73,6 +73,33 @@ class CatalogRepositoryTest {
         assertFalse(query.contains("'attribute' AS type"), "should exclude attribute branch");
     }
 
+    // ------------------------------------------------------ capability declaring resources
+
+    @Test
+    void capabilityBranchIncludesDeclaringResources() {
+        String query = repository.buildResultQuery(queryWith(null, "capability", null, null));
+        assertTrue(query.contains("declaringResources"), "capability branch should include declaringResources");
+        assertTrue(query.contains("DECLARES_CAPABILITY"), "should use DECLARES_CAPABILITY relationship");
+    }
+
+    @Test
+    void noFiltersIncludesDeclaringResources() {
+        String query = repository.buildResultQuery(queryWith(null, null, null, null));
+        assertTrue(query.contains("declaringResources"), "all-types query should include declaringResources");
+    }
+
+    @Test
+    void nonCapabilityBranchesHaveNullDeclaringResources() {
+        String query = repository.buildResultQuery(queryWith(null, null, null, null));
+        assertTrue(query.contains("null AS declaringResources"), "non-capability branches emit null declaringResources");
+    }
+
+    @Test
+    void attributeOnlyOmitsDeclaringResources() {
+        String query = repository.buildResultQuery(queryWith(null, "attribute", null, null));
+        assertFalse(query.contains("declaringResources"), "attribute-only should not include declaringResources");
+    }
+
     // ------------------------------------------------------ attribute filters suppress other types
 
     @Test

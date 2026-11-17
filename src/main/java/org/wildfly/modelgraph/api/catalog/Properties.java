@@ -10,5 +10,5 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @RegisterForReflection
 @Schema(description = "Type-specific properties for catalog results")
-public sealed interface Properties permits ResourceProperties, AttributeProperties, OperationProperties {
+public sealed interface Properties permits ResourceProperties, AttributeProperties, OperationProperties, CapabilityProperties {
 }

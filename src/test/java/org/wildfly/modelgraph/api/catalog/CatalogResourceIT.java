@@ -129,21 +129,6 @@ class CatalogResourceIT {
     }
 
     @Test
-    void deploymentResourcesAreExcluded() {
-        var response = given()
-                .queryParam("type", "resource")
-                .queryParam("limit", 200)
-                .when().get("/api/catalog")
-                .then()
-                .statusCode(200)
-                .extract().jsonPath();
-
-        List<String> addresses = response.getList("results.address");
-        assertThat("No deployment resources should be present",
-                addresses, everyItem(not(startsWith("/deployment="))));
-    }
-
-    @Test
     void singletonTrueReturnsOnlySingletonResources() {
         var response = given()
                 .queryParam("type", "resource")
@@ -1022,6 +1007,31 @@ class CatalogResourceIT {
                 assertThat("Facet " + facetEntry.getKey() + "." + countEntry.getKey() + " should not be null",
                         countEntry.getValue(), notNullValue());
             }
+        }
+    }
+
+    // ------------------------------------------------------ capability properties
+
+    @Test
+    void capabilityResultsIncludeDeclaringResources() {
+        var response = given()
+                .queryParam("type", "capability")
+                .queryParam("limit", 10)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<Map<String, Object>> results = response.getList("results");
+        for (Map<String, Object> result : results) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> properties = (Map<String, Object>) result.get("properties");
+            assertThat("Capability should have properties", properties, notNullValue());
+            assertThat("Properties should have declaringResources", properties, hasKey("declaringResources"));
+            @SuppressWarnings("unchecked")
+            List<String> declaringResources = (List<String>) properties.get("declaringResources");
+            assertThat("declaringResources should not be empty", declaringResources, not(empty()));
         }
     }
 

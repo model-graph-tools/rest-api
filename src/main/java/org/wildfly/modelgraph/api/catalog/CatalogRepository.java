@@ -14,6 +14,7 @@ import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
+import org.wildfly.modelgraph.api.CypherQuery;
 import org.wildfly.modelgraph.api.LuceneUtils;
 
 /** Builds dynamic Cypher queries from catalog filter combinations, executes them against Neo4j, and computes per-facet counts. */
@@ -26,8 +27,6 @@ public class CatalogRepository {
     private static final Set<String> SAFE_ORDER_DIRECTIONS = Set.of("ASC", "DESC");
     private static final Set<String> REFINED_DATA_TYPES = Set.of("list-simple", "list-object", "map", "object");
     private static final String NULL_OP_PROPS = ", null AS readOnly, null AS runtimeOnly, null AS isGlobal, null AS hasParams, null AS hasReturnValue";
-    private static final String OP_PROPS = ", coalesce(o.`read-only`, false) AS readOnly, coalesce(o.`runtime-only`, false) AS runtimeOnly, coalesce(o.global, false) AS isGlobal, EXISTS { (o)-[:ACCEPTS]->() } AS hasParams, o.`return-value` IS NOT NULL AS hasReturnValue";
-    private static final String OP_PROPS_SEARCH = ", coalesce(node.`read-only`, false) AS readOnly, coalesce(node.`runtime-only`, false) AS runtimeOnly, coalesce(node.global, false) AS isGlobal, EXISTS { (node)-[:ACCEPTS]->() } AS hasParams, node.`return-value` IS NOT NULL AS hasReturnValue";
 
     @Inject
     Driver driver;
@@ -63,11 +62,10 @@ public class CatalogRepository {
     public CatalogFacets facetCounts(CatalogQuery filter) {
         Set<String> applicable = applicableFacets(filter);
 
-        // Attribute-specific: accessType, storage, restart need default keys
         Map<String, Long> accessTypeCounts = null;
         if (applicable.contains("accessType")) {
             accessTypeCounts = multiValueAttributeFacetCounts(filter, "accessType",
-                    "toLower(a.`access-type`)", "accessTypes");
+                    "toLower(%s.`access-type`)", "accessTypes");
             accessTypeCounts.putIfAbsent("read-write", 0L);
             accessTypeCounts.putIfAbsent("read-only", 0L);
             accessTypeCounts.putIfAbsent("metric", 0L);
@@ -75,14 +73,14 @@ public class CatalogRepository {
         Map<String, Long> storageCounts = null;
         if (applicable.contains("storage")) {
             storageCounts = multiValueAttributeFacetCounts(filter, "storage",
-                    "toLower(a.storage)", "storageValues");
+                    "toLower(%s.storage)", "storageValues");
             storageCounts.putIfAbsent("configuration", 0L);
             storageCounts.putIfAbsent("runtime", 0L);
         }
         Map<String, Long> restartCounts = null;
         if (applicable.contains("restart")) {
             restartCounts = multiValueAttributeFacetCounts(filter, "restart",
-                    "toLower(a.`restart-required`)", "restartValues");
+                    "toLower(%s.`restart-required`)", "restartValues");
             restartCounts.putIfAbsent("no-services", 0L);
             restartCounts.putIfAbsent("all-services", 0L);
             restartCounts.putIfAbsent("resource-services", 0L);
@@ -100,13 +98,13 @@ public class CatalogRepository {
                 accessTypeCounts,
                 storageCounts,
                 restartCounts,
-                applicable.contains("required") ? booleanAttributeFacetCounts(filter, "required", "a.required") : null,
-                applicable.contains("nillable") ? booleanAttributeFacetCounts(filter, "nillable", "a.nillable") : null,
+                applicable.contains("required") ? booleanAttributeFacetCounts(filter, "required", "%s.required") : null,
+                applicable.contains("nillable") ? booleanAttributeFacetCounts(filter, "nillable", "%s.nillable") : null,
                 applicable.contains("expressions")
-                        ? booleanAttributeFacetCounts(filter, "expressions", "a.`expressions-allowed`")
+                        ? booleanAttributeFacetCounts(filter, "expressions", "%s.`expressions-allowed`")
                         : null,
                 applicable.contains("unit")
-                        ? multiValueAttributeFacetCounts(filter, "unit", "toLower(a.unit)", "units")
+                        ? multiValueAttributeFacetCounts(filter, "unit", "toLower(%s.unit)", "units")
                         : null,
                 applicable.contains("hasAllowed") ? hasAllowedFacetCounts(filter) : null,
                 applicable.contains("sensitive") ? sensitiveFacetCounts(filter) : null,
@@ -197,71 +195,45 @@ public class CatalogRepository {
     }
 
     private Map<String, Long> multiValueAttributeFacetCounts(CatalogQuery filter,
-            String facetName, String cypherExpression, String paramName) {
-        StringBuilder query = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "node", filter);
-            appendDeprecatedWhere(query, "node", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, facetName, "node");
-            query.append("\nWITH ").append(cypherExpression.replace("a.", "node.")).append(" AS value");
-        } else {
-            query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "a", filter);
-            appendDeprecatedWhere(query, "a", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, facetName, "a");
-            query.append("\nWITH ").append(cypherExpression).append(" AS value");
-        }
-        query.append("\nWHERE value IS NOT NULL");
-        query.append("\nRETURN value, count(*) AS count");
+            String facetName, String cypherExpressionTemplate, String paramName) {
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFiltersExcluding(q, filter, facetName, v);
+        q.with(cypherExpressionTemplate.formatted(v) + " AS value");
+        q.where("value IS NOT NULL");
+        q.returning("value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, paramName);
 
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(query.toString(), params).list().forEach(record ->
+            session.run(q.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
             return counts;
         }
     }
 
     private Map<String, Long> booleanAttributeFacetCounts(CatalogQuery filter,
-            String facetName, String cypherExpression) {
-        StringBuilder query = new StringBuilder();
-        String expr;
-        if (filter.hasSearchQuery()) {
-            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "node", filter);
-            appendDeprecatedWhere(query, "node", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, facetName, "node");
-            expr = cypherExpression.replace("a.", "node.");
-        } else {
-            query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "a", filter);
-            appendDeprecatedWhere(query, "a", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, facetName, "a");
-            expr = cypherExpression;
-        }
-        query.append("\nRETURN CASE WHEN coalesce(").append(expr)
-                .append(", false) THEN 'true' ELSE 'false' END AS value, count(*) AS count");
+            String facetName, String cypherExpressionTemplate) {
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFiltersExcluding(q, filter, facetName, v);
+        String expr = cypherExpressionTemplate.formatted(v);
+        q.returning("CASE WHEN coalesce(" + expr + ", false) THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
 
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(query.toString(), params).list().forEach(record ->
+            session.run(q.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
             counts.putIfAbsent("true", 0L);
             counts.putIfAbsent("false", 0L);
@@ -270,35 +242,20 @@ public class CatalogRepository {
     }
 
     private Map<String, Long> hasAllowedFacetCounts(CatalogQuery filter) {
-        StringBuilder query = new StringBuilder();
-        String nodeVar;
-        if (filter.hasSearchQuery()) {
-            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "node", filter);
-            appendDeprecatedWhere(query, "node", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, "hasAllowed", "node");
-            nodeVar = "node";
-        } else {
-            query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "a", filter);
-            appendDeprecatedWhere(query, "a", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, "hasAllowed", "a");
-            nodeVar = "a";
-        }
-        query.append("\nRETURN CASE WHEN ").append(nodeVar)
-                .append(".`allowed` IS NOT NULL THEN 'true' ELSE 'false' END AS value, count(*) AS count");
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFiltersExcluding(q, filter, "hasAllowed", v);
+        q.returning("CASE WHEN " + v + ".`allowed` IS NOT NULL THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
 
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(query.toString(), params).list().forEach(record ->
+            session.run(q.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
             return counts;
         }
@@ -313,6 +270,7 @@ public class CatalogRepository {
         query.append("}\n");
         boolean includesResource = effectiveIncludesResource(filter);
         boolean includesOperation = effectiveIncludesOperation(filter);
+        boolean includesCapability = effectiveIncludesCapability(filter);
         StringBuilder returnClause = new StringBuilder();
         returnClause.append("RETURN type, name, description, address, resourceAddress, stability, deprecated, properties");
         if (includesResource) {
@@ -320,6 +278,9 @@ public class CatalogRepository {
         }
         if (includesOperation) {
             returnClause.append(", readOnly, runtimeOnly, isGlobal, hasParams, hasReturnValue");
+        }
+        if (includesCapability) {
+            returnClause.append(", declaringResources");
         }
         if (filter.hasSearchQuery()) {
             returnClause.append(", score");
@@ -395,13 +356,13 @@ public class CatalogRepository {
         boolean includesCapability = effectiveIncludesCapability(filter);
 
         if (includesResource) {
-            branches.add(resourceBranch(filter, includesOperation));
+            branches.add(resourceBranch(filter, includesOperation, includesCapability));
         }
         if (includesAttribute) {
-            branches.add(attributeBranch(filter, includesResource, includesOperation));
+            branches.add(attributeBranch(filter, includesResource, includesOperation, includesCapability));
         }
         if (includesOperation) {
-            branches.add(operationBranch(filter, includesResource));
+            branches.add(operationBranch(filter, includesResource, includesCapability));
         }
         if (includesCapability) {
             branches.add(capabilityBranch(filter, includesResource, includesOperation));
@@ -422,258 +383,247 @@ public class CatalogRepository {
 
     // ------------------------------------------------------ result branches
 
-    private String resourceBranch(CatalogQuery filter, boolean includesOperation) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node, score\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "node", filter);
-            appendSingletonWhere(sb, "node", filter);
-            appendDeclaresCapWhere(sb, "node", filter);
-            appendDefinesAttrGroupsWhere(sb, "node", filter);
-            sb.append("\nRETURN 'resource' AS type, node.name AS name, node.description AS description, ");
-            sb.append("node.address AS address, null AS resourceAddress, toLower(node.stability) AS stability, ");
-            sb.append("EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties, ");
-            sb.append("coalesce(node.singleton, false) AS singleton, ");
-            sb.append("[(node)-[:DECLARES_CAPABILITY]->(cap) | cap.name] AS capabilities, ");
-            sb.append("EXISTS { (node)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } AS definesAttrGroups");
-            if (includesOperation) {
-                sb.append(NULL_OP_PROPS);
-            }
-            sb.append(", score");
-        } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "r", filter);
-            appendDeprecatedWhere(sb, "r", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendSingletonWhere(sb, "r", filter);
-            appendDeclaresCapWhere(sb, "r", filter);
-            appendDefinesAttrGroupsWhere(sb, "r", filter);
-            sb.append("\nRETURN 'resource' AS type, r.name AS name, r.description AS description, ");
-            sb.append("r.address AS address, null AS resourceAddress, toLower(r.stability) AS stability, ");
-            sb.append("EXISTS { (r)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties, ");
-            sb.append("coalesce(r.singleton, false) AS singleton, ");
-            sb.append("[(r)-[:DECLARES_CAPABILITY]->(cap) | cap.name] AS capabilities, ");
-            sb.append("EXISTS { (r)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } AS definesAttrGroups");
-            if (includesOperation) {
-                sb.append(NULL_OP_PROPS);
-            }
+    private String resourceBranch(CatalogQuery filter, boolean includesOperation, boolean includesCapability) {
+        String v = v(filter, "r");
+        CypherQuery q = startQuery(filter, "Resource", "r", true);
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, v, filter);
+        appendSingletonWhere(q, v, filter);
+        appendDeclaresCapWhere(q, v, filter);
+        appendDefinesAttrGroupsWhere(q, v, filter);
+        q.returning("'resource' AS type, " + v + ".name AS name, " + v + ".description AS description, "
+                + v + ".address AS address, null AS resourceAddress, toLower(" + v + ".stability) AS stability, "
+                + "EXISTS { (" + v + ")-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties, "
+                + "coalesce(" + v + ".singleton, false) AS singleton, "
+                + "[(" + v + ")-[:DECLARES_CAPABILITY]->(cap) | cap.name] AS capabilities, "
+                + "EXISTS { (" + v + ")-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } AS definesAttrGroups");
+        if (includesOperation) {
+            q.append(NULL_OP_PROPS);
         }
-        return sb.toString();
+        if (includesCapability) {
+            q.append(", null AS declaringResources");
+        }
+        if (filter.hasSearchQuery()) {
+            q.append(", score");
+        }
+        return q.toString();
     }
 
-    private String attributeBranch(CatalogQuery filter, boolean includesResource, boolean includesOperation) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node, score\n");
-            sb.append("WHERE node:Attribute\n");
-            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendAttributeFilters(sb, filter, "node");
-            sb.append("\nRETURN 'attribute' AS type, node.name AS name, node.description AS description, ");
-            sb.append("r.address + '/' + node.name AS address, r.address AS resourceAddress, toLower(node.stability) AS stability, ");
-            sb.append("EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated, ");
-            sb.append("{dataType: ").append(dataTypeCaseExpression("node")).append(", accessType: toLower(node.`access-type`), ");
-            sb.append("storage: toLower(node.storage), restart: toLower(node.`restart-required`), ");
-            sb.append("required: coalesce(node.required, false), nillable: coalesce(node.nillable, false), ");
-            sb.append("expressions: coalesce(node.`expressions-allowed`, false), ");
-            sb.append("sensitive: EXISTS { (node)-[:IS_SENSITIVE]->() }, unit: toLower(node.unit), ");
-            sb.append("capabilityReference: head([(node)-[:REFERENCES_CAPABILITY]->(cap) | cap.name])} AS properties");
-            if (includesResource) {
-                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
-            }
-            if (includesOperation) {
-                sb.append(NULL_OP_PROPS);
-            }
-            sb.append(", score");
-        } else {
-            sb.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "a", filter);
-            appendDeprecatedWhere(sb, "a", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendAttributeFilters(sb, filter, "a");
-            sb.append("\nRETURN 'attribute' AS type, a.name AS name, a.description AS description, ");
-            sb.append("r.address + '/' + a.name AS address, r.address AS resourceAddress, toLower(a.stability) AS stability, ");
-            sb.append("EXISTS { (a)-[:DEPRECATED_SINCE]->() } AS deprecated, ");
-            sb.append("{dataType: ").append(dataTypeCaseExpression("a")).append(", accessType: toLower(a.`access-type`), ");
-            sb.append("storage: toLower(a.storage), restart: toLower(a.`restart-required`), ");
-            sb.append("required: coalesce(a.required, false), nillable: coalesce(a.nillable, false), ");
-            sb.append("expressions: coalesce(a.`expressions-allowed`, false), ");
-            sb.append("sensitive: EXISTS { (a)-[:IS_SENSITIVE]->() }, unit: toLower(a.unit), ");
-            sb.append("capabilityReference: head([(a)-[:REFERENCES_CAPABILITY]->(cap) | cap.name])} AS properties");
-            if (includesResource) {
-                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
-            }
-            if (includesOperation) {
-                sb.append(NULL_OP_PROPS);
-            }
+    private String attributeBranch(CatalogQuery filter, boolean includesResource, boolean includesOperation,
+            boolean includesCapability) {
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)", true);
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFilters(q, filter, v);
+        q.returning("'attribute' AS type, " + v + ".name AS name, " + v + ".description AS description, "
+                + "r.address + '/' + " + v + ".name AS address, r.address AS resourceAddress, toLower(" + v + ".stability) AS stability, "
+                + "EXISTS { (" + v + ")-[:DEPRECATED_SINCE]->() } AS deprecated, "
+                + "{dataType: " + dataTypeCaseExpression(v) + ", accessType: toLower(" + v + ".`access-type`), "
+                + "storage: toLower(" + v + ".storage), restart: toLower(" + v + ".`restart-required`), "
+                + "required: coalesce(" + v + ".required, false), nillable: coalesce(" + v + ".nillable, false), "
+                + "expressions: coalesce(" + v + ".`expressions-allowed`, false), "
+                + "sensitive: EXISTS { (" + v + ")-[:IS_SENSITIVE]->() }, unit: toLower(" + v + ".unit), "
+                + "capabilityReference: head([(" + v + ")-[:REFERENCES_CAPABILITY]->(cap) | cap.name])} AS properties");
+        if (includesResource) {
+            q.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
         }
-        return sb.toString();
+        if (includesOperation) {
+            q.append(NULL_OP_PROPS);
+        }
+        if (includesCapability) {
+            q.append(", null AS declaringResources");
+        }
+        if (filter.hasSearchQuery()) {
+            q.append(", score");
+        }
+        return q.toString();
     }
 
-    private String operationBranch(CatalogQuery filter, boolean includesResource) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node, score\n");
-            sb.append("WHERE node:Operation\n");
-            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendOperationFilters(sb, "node", filter);
-            sb.append("\nRETURN 'operation' AS type, node.name AS name, node.description AS description, ");
-            sb.append("r.address + '/' + node.name AS address, r.address AS resourceAddress, toLower(node.stability) AS stability, ");
-            sb.append("EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties");
-            if (includesResource) {
-                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
-            }
-            sb.append(OP_PROPS_SEARCH);
-            sb.append(", score");
-        } else {
-            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "o", filter);
-            appendDeprecatedWhere(sb, "o", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendOperationFilters(sb, "o", filter);
-            sb.append("\nRETURN 'operation' AS type, o.name AS name, o.description AS description, ");
-            sb.append("r.address + '/' + o.name AS address, r.address AS resourceAddress, toLower(o.stability) AS stability, ");
-            sb.append("EXISTS { (o)-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties");
-            if (includesResource) {
-                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
-            }
-            sb.append(OP_PROPS);
+    private String operationBranch(CatalogQuery filter, boolean includesResource, boolean includesCapability) {
+        String v = v(filter, "o");
+        CypherQuery q = startRelQuery(filter, "Operation", "o", "<-[:PROVIDES]-(r:Resource)", true);
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendOperationFilters(q, v, filter);
+        q.returning("'operation' AS type, " + v + ".name AS name, " + v + ".description AS description, "
+                + "r.address + '/' + " + v + ".name AS address, r.address AS resourceAddress, toLower(" + v + ".stability) AS stability, "
+                + "EXISTS { (" + v + ")-[:DEPRECATED_SINCE]->() } AS deprecated, null AS properties");
+        if (includesResource) {
+            q.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
         }
-        return sb.toString();
+        q.append(opProps(v));
+        if (includesCapability) {
+            q.append(", null AS declaringResources");
+        }
+        if (filter.hasSearchQuery()) {
+            q.append(", score");
+        }
+        return q.toString();
     }
 
     private String capabilityBranch(CatalogQuery filter, boolean includesResource, boolean includesOperation) {
-        StringBuilder sb = new StringBuilder();
+        CypherQuery q = CypherQuery.create();
         if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
-            sb.append("MATCH (c:Capability) WHERE false");
-            sb.append("\nRETURN 'capability' AS type, c.name AS name, null AS description, ");
-            sb.append("null AS address, null AS resourceAddress, toLower(c.stability) AS stability, ");
-            sb.append("false AS deprecated, null AS properties");
+            q.match("(c:Capability)").where("false");
+            q.returning("'capability' AS type, c.name AS name, null AS description, "
+                    + "null AS address, null AS resourceAddress, toLower(c.stability) AS stability, "
+                    + "false AS deprecated, null AS properties");
             if (includesResource) {
-                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
+                q.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
             }
             if (includesOperation) {
-                sb.append(NULL_OP_PROPS);
+                q.append(NULL_OP_PROPS);
             }
+            q.append(", [] AS declaringResources");
             if (filter.hasSearchQuery()) {
-                sb.append(", 0.0 AS score");
+                q.append(", 0.0 AS score");
             }
-            return sb.toString();
+            return q.toString();
         }
 
         if (filter.hasSearchQuery()) {
-            sb.append("MATCH (c:Capability)\n");
-            sb.append("WHERE ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
-            appendStabilityWhere(sb, "c", filter);
+            q.match("(c:Capability)\n");
+            q.where("ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
+            appendStabilityWhere(q, "c", filter);
             if (filter.hasScopeFilter()) {
-                sb.append("\nWITH c");
-                sb.append("\nMATCH (c)<-[:DECLARES_CAPABILITY]-(r:Resource) WHERE r.address STARTS WITH $scope");
+                q.with("c");
+                q.newLine().match("(c)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
             }
-            sb.append("\nRETURN 'capability' AS type, c.name AS name, null AS description, ");
-            sb.append("null AS address, null AS resourceAddress, toLower(c.stability) AS stability, ");
-            sb.append("false AS deprecated, null AS properties");
-            if (includesResource) {
-                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
-            }
-            if (includesOperation) {
-                sb.append(NULL_OP_PROPS);
-            }
-            sb.append(", 1.0 AS score");
         } else {
             if (filter.hasScopeFilter()) {
-                sb.append("MATCH (c:Capability)<-[:DECLARES_CAPABILITY]-(r:Resource) WHERE r.address STARTS WITH $scope");
-                appendStabilityWhere(sb, "c", filter);
+                q.match("(c:Capability)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
+                appendStabilityWhere(q, "c", filter);
             } else {
-                sb.append("MATCH (c:Capability)");
-                if (filter.hasStabilityFilter()) {
-                    sb.append(" WHERE toLower(c.stability) IN $stabilities");
-                }
-            }
-            sb.append("\nRETURN 'capability' AS type, c.name AS name, null AS description, ");
-            sb.append("null AS address, null AS resourceAddress, toLower(c.stability) AS stability, ");
-            sb.append("false AS deprecated, null AS properties");
-            if (includesResource) {
-                sb.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
-            }
-            if (includesOperation) {
-                sb.append(NULL_OP_PROPS);
+                q.match("(c:Capability)");
+                q.whereIf(filter.hasStabilityFilter(), "toLower(c.stability) IN $stabilities");
             }
         }
-        return sb.toString();
+        q.returning("'capability' AS type, c.name AS name, null AS description, "
+                + "null AS address, null AS resourceAddress, toLower(c.stability) AS stability, "
+                + "false AS deprecated, null AS properties");
+        if (includesResource) {
+            q.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
+        }
+        if (includesOperation) {
+            q.append(NULL_OP_PROPS);
+        }
+        q.append(", [(c)<-[:DECLARES_CAPABILITY]-(dr:Resource) | dr.address] AS declaringResources");
+        if (filter.hasSearchQuery()) {
+            q.append(", 1.0 AS score");
+        }
+        return q.toString();
+    }
+
+    // ------------------------------------------------------ query start helpers
+
+    private CypherQuery startQuery(CatalogQuery filter, String label, String var, boolean withScore) {
+        CypherQuery q = CypherQuery.create();
+        if (filter.hasSearchQuery()) {
+            if (withScore) {
+                q.fullTextSearch(SEARCH_INDEX, label);
+            } else {
+                q.fullTextSearchNoScore(SEARCH_INDEX, label);
+            }
+        } else {
+            q.match("(" + var + ":" + label + ")");
+        }
+        return q;
+    }
+
+    private CypherQuery startQuery(CatalogQuery filter, String label, String var) {
+        return startQuery(filter, label, var, false);
+    }
+
+    private CypherQuery startRelQuery(CatalogQuery filter, String label, String var, String relationship, boolean withScore) {
+        CypherQuery q = CypherQuery.create();
+        if (filter.hasSearchQuery()) {
+            if (withScore) {
+                q.fullTextSearch(SEARCH_INDEX, label);
+            } else {
+                q.fullTextSearchNoScore(SEARCH_INDEX, label);
+            }
+            q.newLine().match("(node)" + relationship);
+        } else {
+            q.match("(" + var + ":" + label + ")" + relationship);
+        }
+        return q;
+    }
+
+    private CypherQuery startRelQuery(CatalogQuery filter, String label, String var, String relationship) {
+        return startRelQuery(filter, label, var, relationship, false);
+    }
+
+    private String v(CatalogQuery filter, String defaultVar) {
+        return filter.hasSearchQuery() ? "node" : defaultVar;
+    }
+
+    private static String opProps(String v) {
+        return ", coalesce(" + v + ".`read-only`, false) AS readOnly, coalesce(" + v
+                + ".`runtime-only`, false) AS runtimeOnly, coalesce(" + v
+                + ".global, false) AS isGlobal, EXISTS { (" + v
+                + ")-[:ACCEPTS]->() } AS hasParams, " + v + ".`return-value` IS NOT NULL AS hasReturnValue";
     }
 
     // ------------------------------------------------------ where clause helpers
 
-    private void appendStabilityWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
-        if (filter.hasStabilityFilter()) {
-            sb.append(" AND toLower(").append(nodeVar).append(".stability) IN $stabilities");
-        }
+    private void appendStabilityWhere(CypherQuery q, String nodeVar, CatalogQuery filter) {
+        q.whereIf(filter.hasStabilityFilter(), "toLower(" + nodeVar + ".stability) IN $stabilities");
     }
 
-    private void appendDeprecatedWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
+    private void appendDeprecatedWhere(CypherQuery q, String nodeVar, CatalogQuery filter) {
         if (filter.hasDeprecatedFilter()) {
-            boolean wantDeprecated = Boolean.TRUE.equals(filter.deprecated());
-            if (wantDeprecated) {
-                sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:DEPRECATED_SINCE]->() }");
+            if (Boolean.TRUE.equals(filter.deprecated())) {
+                q.where("EXISTS { (" + nodeVar + ")-[:DEPRECATED_SINCE]->() }");
             } else {
-                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:DEPRECATED_SINCE]->() }");
+                q.where("NOT EXISTS { (" + nodeVar + ")-[:DEPRECATED_SINCE]->() }");
             }
         }
     }
 
-    private void appendScopeWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
-        if (filter.hasScopeFilter()) {
-            sb.append(" AND ").append(nodeVar).append(".address STARTS WITH $scope");
-        }
+    private void appendScopeWhere(CypherQuery q, String nodeVar, CatalogQuery filter) {
+        q.whereIf(filter.hasScopeFilter(), nodeVar + ".address STARTS WITH $scope");
     }
 
-    private void appendSingletonWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
-        if (filter.hasSingletonFilter()) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".singleton, false) = $singleton");
-        }
+    private void appendSingletonWhere(CypherQuery q, String nodeVar, CatalogQuery filter) {
+        q.whereIf(filter.hasSingletonFilter(), "coalesce(" + nodeVar + ".singleton, false) = $singleton");
     }
 
-    private void appendDeclaresCapWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
+    private void appendDeclaresCapWhere(CypherQuery q, String nodeVar, CatalogQuery filter) {
         if (!filter.hasDeclaresCapFilter()) {
             return;
         }
         if (filter.declaresCapIsTrue()) {
-            sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:DECLARES_CAPABILITY]->() }");
+            q.where("EXISTS { (" + nodeVar + ")-[:DECLARES_CAPABILITY]->() }");
         } else if (filter.declaresCapIsFalse()) {
-            sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:DECLARES_CAPABILITY]->() }");
+            q.where("NOT EXISTS { (" + nodeVar + ")-[:DECLARES_CAPABILITY]->() }");
         } else {
             String text = filter.declaresCapContains();
             if (text != null) {
-                sb.append(" AND EXISTS { (").append(nodeVar)
-                        .append(")-[:DECLARES_CAPABILITY]->(cap:Capability) WHERE toLower(cap.name) CONTAINS $declaresCapText }");
+                q.where("EXISTS { (" + nodeVar
+                        + ")-[:DECLARES_CAPABILITY]->(cap:Capability) WHERE toLower(cap.name) CONTAINS $declaresCapText }");
             }
         }
     }
 
-    private void appendDefinesAttrGroupsWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
+    private void appendDefinesAttrGroupsWhere(CypherQuery q, String nodeVar, CatalogQuery filter) {
         if (filter.hasDefinesAttrGroupsFilter()) {
             if (filter.definesAttrGroups()) {
-                sb.append(" AND EXISTS { (").append(nodeVar)
-                        .append(")-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL }");
+                q.where("EXISTS { (" + nodeVar
+                        + ")-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL }");
             } else {
-                sb.append(" AND NOT EXISTS { (").append(nodeVar)
-                        .append(")-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL }");
+                q.where("NOT EXISTS { (" + nodeVar
+                        + ")-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL }");
             }
         }
     }
 
     // ------------------------------------------------------ relationship-based attribute where helpers
 
-    private void appendDataTypeFilter(StringBuilder sb, CatalogQuery filter, String nodeVar) {
+    private void appendDataTypeFilter(CypherQuery q, CatalogQuery filter, String nodeVar) {
         if (!filter.hasDataTypeFilter()) {
             return;
         }
@@ -702,195 +652,181 @@ public class CatalogRepository {
         }
 
         if (conditions.size() == 1) {
-            sb.append(" AND ").append(conditions.getFirst());
+            q.where(conditions.getFirst());
         } else {
-            sb.append(" AND (").append(String.join(" OR ", conditions)).append(")");
+            q.where("(" + String.join(" OR ", conditions) + ")");
         }
     }
 
-    private void appendSensitiveWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
+    private void appendSensitiveWhere(CypherQuery q, String nodeVar, CatalogQuery filter) {
         if (filter.hasSensitiveFilter()) {
             if (filter.sensitive()) {
-                sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:IS_SENSITIVE]->() }");
+                q.where("EXISTS { (" + nodeVar + ")-[:IS_SENSITIVE]->() }");
             } else {
-                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:IS_SENSITIVE]->() }");
+                q.where("NOT EXISTS { (" + nodeVar + ")-[:IS_SENSITIVE]->() }");
             }
         }
     }
 
-    private void appendHasRequiresWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
+    private void appendHasRequiresWhere(CypherQuery q, String nodeVar, CatalogQuery filter) {
         if (filter.hasHasRequiresFilter()) {
             if (filter.hasRequires()) {
-                sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:REQUIRES]->() }");
+                q.where("EXISTS { (" + nodeVar + ")-[:REQUIRES]->() }");
             } else {
-                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:REQUIRES]->() }");
+                q.where("NOT EXISTS { (" + nodeVar + ")-[:REQUIRES]->() }");
             }
         }
     }
 
-    private void appendHasAlternativesWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
+    private void appendHasAlternativesWhere(CypherQuery q, String nodeVar, CatalogQuery filter) {
         if (filter.hasHasAlternativesFilter()) {
             if (filter.hasAlternatives()) {
-                sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:ALTERNATIVE]->() }");
+                q.where("EXISTS { (" + nodeVar + ")-[:ALTERNATIVE]->() }");
             } else {
-                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:ALTERNATIVE]->() }");
+                q.where("NOT EXISTS { (" + nodeVar + ")-[:ALTERNATIVE]->() }");
             }
         }
     }
 
-    private void appendRefsCapWhere(StringBuilder sb, String nodeVar, CatalogQuery filter) {
+    private void appendRefsCapWhere(CypherQuery q, String nodeVar, CatalogQuery filter) {
         if (!filter.hasRefsCapFilter()) {
             return;
         }
         if (filter.refsCapIsTrue()) {
-            sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:REFERENCES_CAPABILITY]->() }");
+            q.where("EXISTS { (" + nodeVar + ")-[:REFERENCES_CAPABILITY]->() }");
         } else if (filter.refsCapIsFalse()) {
-            sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:REFERENCES_CAPABILITY]->() }");
+            q.where("NOT EXISTS { (" + nodeVar + ")-[:REFERENCES_CAPABILITY]->() }");
         } else {
             String text = filter.refsCapContains();
             if (text != null) {
-                sb.append(" AND EXISTS { (").append(nodeVar)
-                        .append(")-[:REFERENCES_CAPABILITY]->(cap:Capability) WHERE toLower(cap.name) CONTAINS $refsCapText }");
+                q.where("EXISTS { (" + nodeVar
+                        + ")-[:REFERENCES_CAPABILITY]->(cap:Capability) WHERE toLower(cap.name) CONTAINS $refsCapText }");
             }
         }
     }
 
     // ------------------------------------------------------ attribute filter helpers
 
-    private void appendAttributeFilters(StringBuilder sb, CatalogQuery filter, String nodeVar) {
-        appendDataTypeFilter(sb, filter, nodeVar);
-        if (filter.hasAccessTypeFilter()) {
-            sb.append(" AND toLower(").append(nodeVar).append(".`access-type`) IN $accessTypes");
-        }
-        if (filter.hasStorageFilter()) {
-            sb.append(" AND toLower(").append(nodeVar).append(".storage) IN $storageValues");
-        }
-        if (filter.hasRestartFilter()) {
-            sb.append(" AND toLower(").append(nodeVar).append(".`restart-required`) IN $restartValues");
-        }
-        if (filter.hasRequiredFilter()) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".required, false) = $required");
-        }
-        if (filter.hasNillableFilter()) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".nillable, false) = $nillable");
-        }
-        if (filter.hasExpressionsFilter()) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".`expressions-allowed`, false) = $expressions");
-        }
-        if (filter.hasUnitFilter()) {
-            sb.append(" AND toLower(").append(nodeVar).append(".unit) IN $units");
-        }
+    private void appendAttributeFilters(CypherQuery q, CatalogQuery filter, String nodeVar) {
+        appendDataTypeFilter(q, filter, nodeVar);
+        q.whereIf(filter.hasAccessTypeFilter(), "toLower(" + nodeVar + ".`access-type`) IN $accessTypes");
+        q.whereIf(filter.hasStorageFilter(), "toLower(" + nodeVar + ".storage) IN $storageValues");
+        q.whereIf(filter.hasRestartFilter(), "toLower(" + nodeVar + ".`restart-required`) IN $restartValues");
+        q.whereIf(filter.hasRequiredFilter(), "coalesce(" + nodeVar + ".required, false) = $required");
+        q.whereIf(filter.hasNillableFilter(), "coalesce(" + nodeVar + ".nillable, false) = $nillable");
+        q.whereIf(filter.hasExpressionsFilter(), "coalesce(" + nodeVar + ".`expressions-allowed`, false) = $expressions");
+        q.whereIf(filter.hasUnitFilter(), "toLower(" + nodeVar + ".unit) IN $units");
         if (filter.hasHasAllowedFilter()) {
             if (Boolean.TRUE.equals(filter.hasAllowed())) {
-                sb.append(" AND ").append(nodeVar).append(".`allowed` IS NOT NULL");
+                q.where(nodeVar + ".`allowed` IS NOT NULL");
             } else {
-                sb.append(" AND ").append(nodeVar).append(".`allowed` IS NULL");
+                q.where(nodeVar + ".`allowed` IS NULL");
             }
         }
-        appendSensitiveWhere(sb, nodeVar, filter);
-        appendHasRequiresWhere(sb, nodeVar, filter);
-        appendHasAlternativesWhere(sb, nodeVar, filter);
-        appendRefsCapWhere(sb, nodeVar, filter);
+        appendSensitiveWhere(q, nodeVar, filter);
+        appendHasRequiresWhere(q, nodeVar, filter);
+        appendHasAlternativesWhere(q, nodeVar, filter);
+        appendRefsCapWhere(q, nodeVar, filter);
     }
 
-    private void appendAttributeFiltersExcluding(StringBuilder sb, CatalogQuery filter,
+    private void appendAttributeFiltersExcluding(CypherQuery q, CatalogQuery filter,
             String excludeFacet, String nodeVar) {
         if (!"dataType".equals(excludeFacet)) {
-            appendDataTypeFilter(sb, filter, nodeVar);
+            appendDataTypeFilter(q, filter, nodeVar);
         }
         if (filter.hasAccessTypeFilter() && !"accessType".equals(excludeFacet)) {
-            sb.append(" AND toLower(").append(nodeVar).append(".`access-type`) IN $accessTypes");
+            q.where("toLower(" + nodeVar + ".`access-type`) IN $accessTypes");
         }
         if (filter.hasStorageFilter() && !"storage".equals(excludeFacet)) {
-            sb.append(" AND toLower(").append(nodeVar).append(".storage) IN $storageValues");
+            q.where("toLower(" + nodeVar + ".storage) IN $storageValues");
         }
         if (filter.hasRestartFilter() && !"restart".equals(excludeFacet)) {
-            sb.append(" AND toLower(").append(nodeVar).append(".`restart-required`) IN $restartValues");
+            q.where("toLower(" + nodeVar + ".`restart-required`) IN $restartValues");
         }
         if (filter.hasRequiredFilter() && !"required".equals(excludeFacet)) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".required, false) = $required");
+            q.where("coalesce(" + nodeVar + ".required, false) = $required");
         }
         if (filter.hasNillableFilter() && !"nillable".equals(excludeFacet)) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".nillable, false) = $nillable");
+            q.where("coalesce(" + nodeVar + ".nillable, false) = $nillable");
         }
         if (filter.hasExpressionsFilter() && !"expressions".equals(excludeFacet)) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".`expressions-allowed`, false) = $expressions");
+            q.where("coalesce(" + nodeVar + ".`expressions-allowed`, false) = $expressions");
         }
         if (filter.hasUnitFilter() && !"unit".equals(excludeFacet)) {
-            sb.append(" AND toLower(").append(nodeVar).append(".unit) IN $units");
+            q.where("toLower(" + nodeVar + ".unit) IN $units");
         }
         if (filter.hasHasAllowedFilter() && !"hasAllowed".equals(excludeFacet)) {
             if (Boolean.TRUE.equals(filter.hasAllowed())) {
-                sb.append(" AND ").append(nodeVar).append(".`allowed` IS NOT NULL");
+                q.where(nodeVar + ".`allowed` IS NOT NULL");
             } else {
-                sb.append(" AND ").append(nodeVar).append(".`allowed` IS NULL");
+                q.where(nodeVar + ".`allowed` IS NULL");
             }
         }
         if (!"sensitive".equals(excludeFacet)) {
-            appendSensitiveWhere(sb, nodeVar, filter);
+            appendSensitiveWhere(q, nodeVar, filter);
         }
         if (!"hasRequires".equals(excludeFacet)) {
-            appendHasRequiresWhere(sb, nodeVar, filter);
+            appendHasRequiresWhere(q, nodeVar, filter);
         }
         if (!"hasAlternatives".equals(excludeFacet)) {
-            appendHasAlternativesWhere(sb, nodeVar, filter);
+            appendHasAlternativesWhere(q, nodeVar, filter);
         }
         if (!"refsCap".equals(excludeFacet)) {
-            appendRefsCapWhere(sb, nodeVar, filter);
+            appendRefsCapWhere(q, nodeVar, filter);
         }
     }
 
     // ------------------------------------------------------ operation filter helpers
 
-    private void appendOperationFilters(StringBuilder sb, String nodeVar, CatalogQuery filter) {
+    private void appendOperationFilters(CypherQuery q, String nodeVar, CatalogQuery filter) {
         if (filter.hasReadOnlyFilter()) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".`read-only`, false) = ").append(filter.readOnly());
+            q.where("coalesce(" + nodeVar + ".`read-only`, false) = " + filter.readOnly());
         }
         if (filter.hasRuntimeOnlyFilter()) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".`runtime-only`, false) = ").append(filter.runtimeOnly());
+            q.where("coalesce(" + nodeVar + ".`runtime-only`, false) = " + filter.runtimeOnly());
         }
         if (filter.hasGlobalFilter()) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".global, false) = ").append(filter.global());
+            q.where("coalesce(" + nodeVar + ".global, false) = " + filter.global());
         }
         if (filter.hasParamsFilter()) {
             if (filter.hasParams()) {
-                sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:ACCEPTS]->() }");
+                q.where("EXISTS { (" + nodeVar + ")-[:ACCEPTS]->() }");
             } else {
-                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:ACCEPTS]->() }");
+                q.where("NOT EXISTS { (" + nodeVar + ")-[:ACCEPTS]->() }");
             }
         }
         if (filter.hasReturnValueFilter()) {
             if (filter.hasReturnValue()) {
-                sb.append(" AND ").append(nodeVar).append(".`return-value` IS NOT NULL");
+                q.where(nodeVar + ".`return-value` IS NOT NULL");
             } else {
-                sb.append(" AND ").append(nodeVar).append(".`return-value` IS NULL");
+                q.where(nodeVar + ".`return-value` IS NULL");
             }
         }
     }
 
-    private void appendOperationFiltersExcluding(StringBuilder sb, String nodeVar,
+    private void appendOperationFiltersExcluding(CypherQuery q, String nodeVar,
             CatalogQuery filter, String excludeFacet) {
         if (!"readOnly".equals(excludeFacet) && filter.hasReadOnlyFilter()) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".`read-only`, false) = ").append(filter.readOnly());
+            q.where("coalesce(" + nodeVar + ".`read-only`, false) = " + filter.readOnly());
         }
         if (!"runtimeOnly".equals(excludeFacet) && filter.hasRuntimeOnlyFilter()) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".`runtime-only`, false) = ").append(filter.runtimeOnly());
+            q.where("coalesce(" + nodeVar + ".`runtime-only`, false) = " + filter.runtimeOnly());
         }
         if (!"global".equals(excludeFacet) && filter.hasGlobalFilter()) {
-            sb.append(" AND coalesce(").append(nodeVar).append(".global, false) = ").append(filter.global());
+            q.where("coalesce(" + nodeVar + ".global, false) = " + filter.global());
         }
         if (!"hasParams".equals(excludeFacet) && filter.hasParamsFilter()) {
             if (filter.hasParams()) {
-                sb.append(" AND EXISTS { (").append(nodeVar).append(")-[:ACCEPTS]->() }");
+                q.where("EXISTS { (" + nodeVar + ")-[:ACCEPTS]->() }");
             } else {
-                sb.append(" AND NOT EXISTS { (").append(nodeVar).append(")-[:ACCEPTS]->() }");
+                q.where("NOT EXISTS { (" + nodeVar + ")-[:ACCEPTS]->() }");
             }
         }
         if (!"hasReturnValue".equals(excludeFacet) && filter.hasReturnValueFilter()) {
             if (filter.hasReturnValue()) {
-                sb.append(" AND ").append(nodeVar).append(".`return-value` IS NOT NULL");
+                q.where(nodeVar + ".`return-value` IS NOT NULL");
             } else {
-                sb.append(" AND ").append(nodeVar).append(".`return-value` IS NULL");
+                q.where(nodeVar + ".`return-value` IS NULL");
             }
         }
     }
@@ -908,96 +844,58 @@ public class CatalogRepository {
     }
 
     private String resourceTypeFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "node", filter);
-            appendSingletonWhere(sb, "node", filter);
-            appendDeclaresCapWhere(sb, "node", filter);
-            appendDefinesAttrGroupsWhere(sb, "node", filter);
-        } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "r", filter);
-            appendDeprecatedWhere(sb, "r", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendSingletonWhere(sb, "r", filter);
-            appendDeclaresCapWhere(sb, "r", filter);
-            appendDefinesAttrGroupsWhere(sb, "r", filter);
-        }
-        sb.append("\nRETURN 'resource' AS type");
-        return sb.toString();
+        String v = v(filter, "r");
+        CypherQuery q = startQuery(filter, "Resource", "r");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, v, filter);
+        appendSingletonWhere(q, v, filter);
+        appendDeclaresCapWhere(q, v, filter);
+        appendDefinesAttrGroupsWhere(q, v, filter);
+        return q.returning("'resource' AS type").toString();
     }
 
     private String attributeTypeFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Attribute\n");
-            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendAttributeFilters(sb, filter, "node");
-        } else {
-            sb.append("MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "a", filter);
-            appendDeprecatedWhere(sb, "a", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendAttributeFilters(sb, filter, "a");
-        }
-        sb.append("\nRETURN 'attribute' AS type");
-        return sb.toString();
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFilters(q, filter, v);
+        return q.returning("'attribute' AS type").toString();
     }
 
     private String operationTypeFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Operation\n");
-            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendOperationFilters(sb, "node", filter);
-        } else {
-            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "o", filter);
-            appendDeprecatedWhere(sb, "o", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendOperationFilters(sb, "o", filter);
-        }
-        sb.append("\nRETURN 'operation' AS type");
-        return sb.toString();
+        String v = v(filter, "o");
+        CypherQuery q = startRelQuery(filter, "Operation", "o", "<-[:PROVIDES]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendOperationFilters(q, v, filter);
+        return q.returning("'operation' AS type").toString();
     }
 
     private String capabilityTypeFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
+        CypherQuery q = CypherQuery.create();
         if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
-            sb.append("MATCH (c:Capability) WHERE false\nRETURN 'capability' AS type");
-            return sb.toString();
+            return q.match("(c:Capability)").where("false").returning("'capability' AS type").toString();
         }
         if (filter.hasSearchQuery()) {
-            sb.append("MATCH (c:Capability)\n");
-            sb.append("WHERE ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
-            appendStabilityWhere(sb, "c", filter);
+            q.match("(c:Capability)\n");
+            q.where("ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
+            appendStabilityWhere(q, "c", filter);
             if (filter.hasScopeFilter()) {
-                sb.append("\nWITH c");
-                sb.append("\nMATCH (c)<-[:DECLARES_CAPABILITY]-(r:Resource) WHERE r.address STARTS WITH $scope");
+                q.with("c");
+                q.newLine().match("(c)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
             }
         } else if (filter.hasScopeFilter()) {
-            sb.append("MATCH (c:Capability)<-[:DECLARES_CAPABILITY]-(r:Resource) WHERE r.address STARTS WITH $scope");
-            appendStabilityWhere(sb, "c", filter);
+            q.match("(c:Capability)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
+            appendStabilityWhere(q, "c", filter);
         } else {
-            sb.append("MATCH (c:Capability)");
-            if (filter.hasStabilityFilter()) {
-                sb.append(" WHERE toLower(c.stability) IN $stabilities");
-            }
+            q.match("(c:Capability)");
+            q.whereIf(filter.hasStabilityFilter(), "toLower(c.stability) IN $stabilities");
         }
-        sb.append("\nRETURN 'capability' AS type");
-        return sb.toString();
+        return q.returning("'capability' AS type").toString();
     }
 
     // ------------------------------------------------------ stability facet branches
@@ -1021,88 +919,52 @@ public class CatalogRepository {
     }
 
     private String resourceStabilityFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "node", filter);
-            appendSingletonWhere(sb, "node", filter);
-            appendDeclaresCapWhere(sb, "node", filter);
-            appendDefinesAttrGroupsWhere(sb, "node", filter);
-            sb.append("\nRETURN toLower(node.stability) AS stability");
-        } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendDeprecatedWhere(sb, "r", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendSingletonWhere(sb, "r", filter);
-            appendDeclaresCapWhere(sb, "r", filter);
-            appendDefinesAttrGroupsWhere(sb, "r", filter);
-            sb.append("\nRETURN toLower(r.stability) AS stability");
-        }
-        return sb.toString();
+        String v = v(filter, "r");
+        CypherQuery q = startQuery(filter, "Resource", "r");
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, v, filter);
+        appendSingletonWhere(q, v, filter);
+        appendDeclaresCapWhere(q, v, filter);
+        appendDefinesAttrGroupsWhere(q, v, filter);
+        return q.returning("toLower(" + v + ".stability) AS stability").toString();
     }
 
     private String attributeStabilityFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Attribute\n");
-            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendAttributeFilters(sb, filter, "node");
-            sb.append("\nRETURN toLower(node.stability) AS stability");
-        } else {
-            sb.append("MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendDeprecatedWhere(sb, "a", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendAttributeFilters(sb, filter, "a");
-            sb.append("\nRETURN toLower(a.stability) AS stability");
-        }
-        return sb.toString();
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)");
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFilters(q, filter, v);
+        return q.returning("toLower(" + v + ".stability) AS stability").toString();
     }
 
     private String operationStabilityFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Operation\n");
-            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendOperationFilters(sb, "node", filter);
-            sb.append("\nRETURN toLower(node.stability) AS stability");
-        } else {
-            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendDeprecatedWhere(sb, "o", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendOperationFilters(sb, "o", filter);
-            sb.append("\nRETURN toLower(o.stability) AS stability");
-        }
-        return sb.toString();
+        String v = v(filter, "o");
+        CypherQuery q = startRelQuery(filter, "Operation", "o", "<-[:PROVIDES]-(r:Resource)");
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendOperationFilters(q, v, filter);
+        return q.returning("toLower(" + v + ".stability) AS stability").toString();
     }
 
     private String capabilityStabilityFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
+        CypherQuery q = CypherQuery.create();
         if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
-            sb.append("MATCH (c:Capability) WHERE false\nRETURN toLower(c.stability) AS stability");
-            return sb.toString();
+            return q.match("(c:Capability)").where("false").returning("toLower(c.stability) AS stability").toString();
         }
         if (filter.hasSearchQuery()) {
-            sb.append("MATCH (c:Capability)\n");
-            sb.append("WHERE ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
+            q.match("(c:Capability)\n");
+            q.where("ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
             if (filter.hasScopeFilter()) {
-                sb.append("\nWITH c");
-                sb.append("\nMATCH (c)<-[:DECLARES_CAPABILITY]-(r:Resource) WHERE r.address STARTS WITH $scope");
+                q.with("c");
+                q.newLine().match("(c)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
             }
         } else if (filter.hasScopeFilter()) {
-            sb.append("MATCH (c:Capability)<-[:DECLARES_CAPABILITY]-(r:Resource) WHERE r.address STARTS WITH $scope");
+            q.match("(c:Capability)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
         } else {
-            sb.append("MATCH (c:Capability)");
+            q.match("(c:Capability)");
         }
-        sb.append("\nRETURN toLower(c.stability) AS stability");
-        return sb.toString();
+        return q.returning("toLower(c.stability) AS stability").toString();
     }
 
     // ------------------------------------------------------ deprecated facet branches
@@ -1126,118 +988,70 @@ public class CatalogRepository {
     }
 
     private String resourceDeprecatedFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendScopeWhere(sb, "node", filter);
-            appendSingletonWhere(sb, "node", filter);
-            appendDeclaresCapWhere(sb, "node", filter);
-            appendDefinesAttrGroupsWhere(sb, "node", filter);
-            sb.append("\nRETURN EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated");
-        } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "r", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendSingletonWhere(sb, "r", filter);
-            appendDeclaresCapWhere(sb, "r", filter);
-            appendDefinesAttrGroupsWhere(sb, "r", filter);
-            sb.append("\nRETURN EXISTS { (r)-[:DEPRECATED_SINCE]->() } AS deprecated");
-        }
-        return sb.toString();
+        String v = v(filter, "r");
+        CypherQuery q = startQuery(filter, "Resource", "r");
+        appendStabilityWhere(q, v, filter);
+        appendScopeWhere(q, v, filter);
+        appendSingletonWhere(q, v, filter);
+        appendDeclaresCapWhere(q, v, filter);
+        appendDefinesAttrGroupsWhere(q, v, filter);
+        return q.returning("EXISTS { (" + v + ")-[:DEPRECATED_SINCE]->() } AS deprecated").toString();
     }
 
     private String attributeDeprecatedFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Attribute\n");
-            sb.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendAttributeFilters(sb, filter, "node");
-            sb.append("\nRETURN EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated");
-        } else {
-            sb.append("MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "a", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendAttributeFilters(sb, filter, "a");
-            sb.append("\nRETURN EXISTS { (a)-[:DEPRECATED_SINCE]->() } AS deprecated");
-        }
-        return sb.toString();
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFilters(q, filter, v);
+        return q.returning("EXISTS { (" + v + ")-[:DEPRECATED_SINCE]->() } AS deprecated").toString();
     }
 
     private String operationDeprecatedFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Operation\n");
-            sb.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendOperationFilters(sb, "node", filter);
-            sb.append("\nRETURN EXISTS { (node)-[:DEPRECATED_SINCE]->() } AS deprecated");
-        } else {
-            sb.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "o", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendOperationFilters(sb, "o", filter);
-            sb.append("\nRETURN EXISTS { (o)-[:DEPRECATED_SINCE]->() } AS deprecated");
-        }
-        return sb.toString();
+        String v = v(filter, "o");
+        CypherQuery q = startRelQuery(filter, "Operation", "o", "<-[:PROVIDES]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendOperationFilters(q, v, filter);
+        return q.returning("EXISTS { (" + v + ")-[:DEPRECATED_SINCE]->() } AS deprecated").toString();
     }
 
     private String capabilityDeprecatedFacetBranch(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
+        CypherQuery q = CypherQuery.create();
         if (filter.hasSearchQuery()) {
-            sb.append("MATCH (c:Capability)\n");
-            sb.append("WHERE ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
-            appendStabilityWhere(sb, "c", filter);
+            q.match("(c:Capability)\n");
+            q.where("ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
+            appendStabilityWhere(q, "c", filter);
             if (filter.hasScopeFilter()) {
-                sb.append("\nWITH c");
-                sb.append("\nMATCH (c)<-[:DECLARES_CAPABILITY]-(r:Resource) WHERE r.address STARTS WITH $scope");
+                q.with("c");
+                q.newLine().match("(c)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
             }
         } else if (filter.hasScopeFilter()) {
-            sb.append("MATCH (c:Capability)<-[:DECLARES_CAPABILITY]-(r:Resource) WHERE r.address STARTS WITH $scope");
-            appendStabilityWhere(sb, "c", filter);
+            q.match("(c:Capability)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
+            appendStabilityWhere(q, "c", filter);
         } else {
-            sb.append("MATCH (c:Capability)");
-            if (filter.hasStabilityFilter()) {
-                sb.append(" WHERE toLower(c.stability) IN $stabilities");
-            }
+            q.match("(c:Capability)");
+            q.whereIf(filter.hasStabilityFilter(), "toLower(c.stability) IN $stabilities");
         }
-        sb.append("\nRETURN false AS deprecated");
-        return sb.toString();
+        return q.returning("false AS deprecated").toString();
     }
 
     // ------------------------------------------------------ resource-specific facet counts
 
     private Map<String, Long> singletonFacetCounts(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "node", filter);
-            appendDeclaresCapWhere(sb, "node", filter);
-            appendDefinesAttrGroupsWhere(sb, "node", filter);
-            sb.append("\nRETURN CASE WHEN coalesce(node.singleton, false) THEN 'true' ELSE 'false' END AS value, count(*) AS count");
-        } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "r", filter);
-            appendDeprecatedWhere(sb, "r", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendDeclaresCapWhere(sb, "r", filter);
-            appendDefinesAttrGroupsWhere(sb, "r", filter);
-            sb.append("\nRETURN CASE WHEN coalesce(r.singleton, false) THEN 'true' ELSE 'false' END AS value, count(*) AS count");
-        }
+        String v = v(filter, "r");
+        CypherQuery q = startQuery(filter, "Resource", "r");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, v, filter);
+        appendDeclaresCapWhere(q, v, filter);
+        appendDefinesAttrGroupsWhere(q, v, filter);
+        q.returning("CASE WHEN coalesce(" + v + ".singleton, false) THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(sb.toString(), params).list().forEach(record ->
+            session.run(q.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
             counts.putIfAbsent("true", 0L);
             counts.putIfAbsent("false", 0L);
@@ -1246,30 +1060,19 @@ public class CatalogRepository {
     }
 
     private Map<String, Long> declaresCapFacetCounts(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "node", filter);
-            appendSingletonWhere(sb, "node", filter);
-            appendDefinesAttrGroupsWhere(sb, "node", filter);
-            sb.append("\nRETURN CASE WHEN EXISTS { (node)-[:DECLARES_CAPABILITY]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
-        } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "r", filter);
-            appendDeprecatedWhere(sb, "r", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendSingletonWhere(sb, "r", filter);
-            appendDefinesAttrGroupsWhere(sb, "r", filter);
-            sb.append("\nRETURN CASE WHEN EXISTS { (r)-[:DECLARES_CAPABILITY]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
-        }
+        String v = v(filter, "r");
+        CypherQuery q = startQuery(filter, "Resource", "r");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, v, filter);
+        appendSingletonWhere(q, v, filter);
+        appendDefinesAttrGroupsWhere(q, v, filter);
+        q.returning("CASE WHEN EXISTS { (" + v + ")-[:DECLARES_CAPABILITY]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(sb.toString(), params).list().forEach(record ->
+            session.run(q.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
             counts.putIfAbsent("true", 0L);
             counts.putIfAbsent("false", 0L);
@@ -1278,30 +1081,19 @@ public class CatalogRepository {
     }
 
     private Map<String, Long> definesAttrGroupsFacetCounts(CatalogQuery filter) {
-        StringBuilder sb = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            sb.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            sb.append("WHERE node:Resource AND NOT node.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "node", filter);
-            appendDeprecatedWhere(sb, "node", filter);
-            appendScopeWhere(sb, "node", filter);
-            appendSingletonWhere(sb, "node", filter);
-            appendDeclaresCapWhere(sb, "node", filter);
-            sb.append("\nRETURN CASE WHEN EXISTS { (node)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
-        } else {
-            sb.append("MATCH (r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(sb, "r", filter);
-            appendDeprecatedWhere(sb, "r", filter);
-            appendScopeWhere(sb, "r", filter);
-            appendSingletonWhere(sb, "r", filter);
-            appendDeclaresCapWhere(sb, "r", filter);
-            sb.append("\nRETURN CASE WHEN EXISTS { (r)-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
-        }
+        String v = v(filter, "r");
+        CypherQuery q = startQuery(filter, "Resource", "r");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, v, filter);
+        appendSingletonWhere(q, v, filter);
+        appendDeclaresCapWhere(q, v, filter);
+        q.returning("CASE WHEN EXISTS { (" + v + ")-[:HAS_ATTRIBUTE]->(a:Attribute) WHERE a.`attribute-group` IS NOT NULL } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(sb.toString(), params).list().forEach(record ->
+            session.run(q.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
             counts.putIfAbsent("true", 0L);
             counts.putIfAbsent("false", 0L);
@@ -1312,34 +1104,22 @@ public class CatalogRepository {
     // ------------------------------------------------------ relationship-based attribute facet counts
 
     private Map<String, Long> dataTypeFacetCounts(CatalogQuery filter) {
-        StringBuilder query = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "node", filter);
-            appendDeprecatedWhere(query, "node", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, "dataType", "node");
-            query.append("\nWITH ").append(dataTypeCaseExpression("node")).append(" AS value");
-        } else {
-            query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "a", filter);
-            appendDeprecatedWhere(query, "a", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, "dataType", "a");
-            query.append("\nWITH ").append(dataTypeCaseExpression("a")).append(" AS value");
-        }
-        query.append("\nWHERE value IS NOT NULL");
-        query.append("\nRETURN value, count(*) AS count");
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFiltersExcluding(q, filter, "dataType", v);
+        q.with(dataTypeCaseExpression(v) + " AS value");
+        q.where("value IS NOT NULL");
+        q.returning("value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, "dataTypes");
 
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(query.toString(), params).list().forEach(record ->
+            session.run(q.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
             counts.putIfAbsent("string", 0L);
             counts.putIfAbsent("int", 0L);
@@ -1358,35 +1138,21 @@ public class CatalogRepository {
     }
 
     private Map<String, Long> sensitiveFacetCounts(CatalogQuery filter) {
-        StringBuilder query = new StringBuilder();
-        String nodeVar;
-        if (filter.hasSearchQuery()) {
-            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "node", filter);
-            appendDeprecatedWhere(query, "node", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, "sensitive", "node");
-            nodeVar = "node";
-        } else {
-            query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "a", filter);
-            appendDeprecatedWhere(query, "a", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, "sensitive", "a");
-            nodeVar = "a";
-        }
-        query.append("\nRETURN CASE WHEN EXISTS { (").append(nodeVar)
-                .append(")-[:IS_SENSITIVE]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFiltersExcluding(q, filter, "sensitive", v);
+        q.returning("CASE WHEN EXISTS { (" + v
+                + ")-[:IS_SENSITIVE]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
 
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(query.toString(), params).list().forEach(record ->
+            session.run(q.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
             counts.putIfAbsent("true", 0L);
             counts.putIfAbsent("false", 0L);
@@ -1403,35 +1169,21 @@ public class CatalogRepository {
     }
 
     private Map<String, Long> relationshipFacetCounts(CatalogQuery filter, String facetName, String relType) {
-        StringBuilder query = new StringBuilder();
-        String nodeVar;
-        if (filter.hasSearchQuery()) {
-            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "node", filter);
-            appendDeprecatedWhere(query, "node", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, facetName, "node");
-            nodeVar = "node";
-        } else {
-            query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "a", filter);
-            appendDeprecatedWhere(query, "a", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, facetName, "a");
-            nodeVar = "a";
-        }
-        query.append("\nRETURN CASE WHEN EXISTS { (").append(nodeVar)
-                .append(")-[:").append(relType).append("]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFiltersExcluding(q, filter, facetName, v);
+        q.returning("CASE WHEN EXISTS { (" + v
+                + ")-[:" + relType + "]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
 
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(query.toString(), params).list().forEach(record ->
+            session.run(q.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
             counts.putIfAbsent("true", 0L);
             counts.putIfAbsent("false", 0L);
@@ -1440,35 +1192,21 @@ public class CatalogRepository {
     }
 
     private Map<String, Long> refsCapFacetCounts(CatalogQuery filter) {
-        StringBuilder query = new StringBuilder();
-        String nodeVar;
-        if (filter.hasSearchQuery()) {
-            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            query.append("WHERE node:Attribute\n");
-            query.append("MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "node", filter);
-            appendDeprecatedWhere(query, "node", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, "refsCap", "node");
-            nodeVar = "node";
-        } else {
-            query.append(
-                    "MATCH (a:Attribute)<-[:HAS_ATTRIBUTE]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "a", filter);
-            appendDeprecatedWhere(query, "a", filter);
-            appendScopeWhere(query, "r", filter);
-            appendAttributeFiltersExcluding(query, filter, "refsCap", "a");
-            nodeVar = "a";
-        }
-        query.append("\nRETURN CASE WHEN EXISTS { (").append(nodeVar)
-                .append(")-[:REFERENCES_CAPABILITY]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
+        String v = v(filter, "a");
+        CypherQuery q = startRelQuery(filter, "Attribute", "a", "<-[:HAS_ATTRIBUTE]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendAttributeFiltersExcluding(q, filter, "refsCap", v);
+        q.returning("CASE WHEN EXISTS { (" + v
+                + ")-[:REFERENCES_CAPABILITY]->() } THEN 'true' ELSE 'false' END AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
         addAttributeFilterParamsExcluding(params, filter, null);
 
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(query.toString(), params).list().forEach(record ->
+            session.run(q.toString(), params).list().forEach(record ->
                     counts.put(record.get("value").asString(), record.get("count").asLong()));
             counts.putIfAbsent("true", 0L);
             counts.putIfAbsent("false", 0L);
@@ -1479,30 +1217,19 @@ public class CatalogRepository {
     // ------------------------------------------------------ operation facet counts
 
     private Map<String, Long> booleanOperationFacetCounts(CatalogQuery filter, String facetName, String propertyName) {
-        StringBuilder query = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            query.append("WHERE node:Operation\n");
-            query.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "node", filter);
-            appendDeprecatedWhere(query, "node", filter);
-            appendScopeWhere(query, "r", filter);
-            appendOperationFiltersExcluding(query, "node", filter, facetName);
-            query.append("\nRETURN coalesce(node.").append(propertyName).append(", false) AS value, count(*) AS count");
-        } else {
-            query.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "o", filter);
-            appendDeprecatedWhere(query, "o", filter);
-            appendScopeWhere(query, "r", filter);
-            appendOperationFiltersExcluding(query, "o", filter, facetName);
-            query.append("\nRETURN coalesce(o.").append(propertyName).append(", false) AS value, count(*) AS count");
-        }
+        String v = v(filter, "o");
+        CypherQuery q = startRelQuery(filter, "Operation", "o", "<-[:PROVIDES]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendOperationFiltersExcluding(q, v, filter, facetName);
+        q.returning("coalesce(" + v + "." + propertyName + ", false) AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
 
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(query.toString(), params).list().forEach(record -> {
+            session.run(q.toString(), params).list().forEach(record -> {
                 boolean value = record.get("value").asBoolean();
                 counts.put(value ? "true" : "false", record.get("count").asLong());
             });
@@ -1513,30 +1240,19 @@ public class CatalogRepository {
     }
 
     private Map<String, Long> hasParamsFacetCounts(CatalogQuery filter) {
-        StringBuilder query = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            query.append("WHERE node:Operation\n");
-            query.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "node", filter);
-            appendDeprecatedWhere(query, "node", filter);
-            appendScopeWhere(query, "r", filter);
-            appendOperationFiltersExcluding(query, "node", filter, "hasParams");
-            query.append("\nRETURN EXISTS { (node)-[:ACCEPTS]->() } AS value, count(*) AS count");
-        } else {
-            query.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "o", filter);
-            appendDeprecatedWhere(query, "o", filter);
-            appendScopeWhere(query, "r", filter);
-            appendOperationFiltersExcluding(query, "o", filter, "hasParams");
-            query.append("\nRETURN EXISTS { (o)-[:ACCEPTS]->() } AS value, count(*) AS count");
-        }
+        String v = v(filter, "o");
+        CypherQuery q = startRelQuery(filter, "Operation", "o", "<-[:PROVIDES]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendOperationFiltersExcluding(q, v, filter, "hasParams");
+        q.returning("EXISTS { (" + v + ")-[:ACCEPTS]->() } AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
 
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(query.toString(), params).list().forEach(record -> {
+            session.run(q.toString(), params).list().forEach(record -> {
                 boolean value = record.get("value").asBoolean();
                 counts.put(value ? "true" : "false", record.get("count").asLong());
             });
@@ -1547,30 +1263,19 @@ public class CatalogRepository {
     }
 
     private Map<String, Long> hasReturnValueFacetCounts(CatalogQuery filter) {
-        StringBuilder query = new StringBuilder();
-        if (filter.hasSearchQuery()) {
-            query.append("CALL db.index.fulltext.queryNodes('").append(SEARCH_INDEX).append("', $term) YIELD node\n");
-            query.append("WHERE node:Operation\n");
-            query.append("MATCH (node)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "node", filter);
-            appendDeprecatedWhere(query, "node", filter);
-            appendScopeWhere(query, "r", filter);
-            appendOperationFiltersExcluding(query, "node", filter, "hasReturnValue");
-            query.append("\nRETURN node.`return-value` IS NOT NULL AS value, count(*) AS count");
-        } else {
-            query.append("MATCH (o:Operation)<-[:PROVIDES]-(r:Resource) WHERE NOT r.address STARTS WITH '/deployment='");
-            appendStabilityWhere(query, "o", filter);
-            appendDeprecatedWhere(query, "o", filter);
-            appendScopeWhere(query, "r", filter);
-            appendOperationFiltersExcluding(query, "o", filter, "hasReturnValue");
-            query.append("\nRETURN o.`return-value` IS NOT NULL AS value, count(*) AS count");
-        }
+        String v = v(filter, "o");
+        CypherQuery q = startRelQuery(filter, "Operation", "o", "<-[:PROVIDES]-(r:Resource)");
+        appendStabilityWhere(q, v, filter);
+        appendDeprecatedWhere(q, v, filter);
+        appendScopeWhere(q, "r", filter);
+        appendOperationFiltersExcluding(q, v, filter, "hasReturnValue");
+        q.returning(v + ".`return-value` IS NOT NULL AS value, count(*) AS count");
 
         Map<String, Object> params = buildFacetParams(filter);
 
         try (var session = driver.session()) {
             Map<String, Long> counts = new LinkedHashMap<>();
-            session.run(query.toString(), params).list().forEach(record -> {
+            session.run(q.toString(), params).list().forEach(record -> {
                 boolean value = record.get("value").asBoolean();
                 counts.put(value ? "true" : "false", record.get("count").asLong());
             });
@@ -1735,6 +1440,12 @@ public class CatalogRepository {
                     record.get("isGlobal").asBoolean(false),
                     record.get("hasParams").asBoolean(false),
                     record.get("hasReturnValue").asBoolean(false));
+        } else if ("capability".equals(type) && filter.includesType(CatalogType.CAPABILITY)) {
+            var drValue = record.get("declaringResources");
+            List<String> declaringResources = drValue.isNull()
+                    ? List.of()
+                    : drValue.asList(org.neo4j.driver.Value::asString);
+            properties = new CapabilityProperties(declaringResources);
         }
         return new CatalogResult(
                 type,
