@@ -63,7 +63,7 @@ Then start the REST API in dev mode, pointing at the container's Bolt port:
 ./mvnw quarkus:dev -Dquarkus.neo4j.uri=bolt://localhost:6410
 ```
 
-The API is available at http://localhost:8080. Health checks are at http://localhost:8080/q/health. The OpenAPI spec is at http://localhost:8080/q/openapi.
+The API is available at http://localhost:8080. Health checks are at http://localhost:8080/api/health. The OpenAPI spec is at http://localhost:8080/api/openapi.
 
 ## Release
 
@@ -85,7 +85,7 @@ Inside the container, nginx proxies `/api/*` to the Quarkus process on port 8080
 
 The full API reference is published at [model-graph-tools.github.io/rest-api](https://model-graph-tools.github.io/rest-api/). It is generated from the OpenAPI annotations in the source code and deployed automatically on each push to `main`.
 
-During development, the interactive OpenAPI spec is also available at `http://localhost:8080/q/openapi` when running in dev mode.
+During development, the interactive OpenAPI spec is also available at `http://localhost:8080/api/openapi` when running in dev mode.
 
 ## Related Projects
 

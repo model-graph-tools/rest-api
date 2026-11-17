@@ -40,7 +40,7 @@ The API exposes ~5 endpoints (see issues [#1](https://github.com/model-graph-too
 - `GET /api/search?q=<term>&limit=<n>` — unified search across resources, attributes, and capabilities
 - `GET /api/capability/{name}/references` — resources referencing a capability
 - `GET /api/version` — WildFly version the graph was built for
-- Health check via Quarkus SmallRye Health (`/q/health`)
+- Health check via Quarkus SmallRye Health (`/api/health`)
 
 ### Neo4j Graph Schema
 
