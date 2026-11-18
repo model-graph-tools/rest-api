@@ -108,7 +108,7 @@ jobs:
           cache: maven
       - run: $MVN package -DskipTests
       - run: cp target/openapi.yaml src/docs/api/openapi.yaml
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: src/docs/api
       - id: deployment
