@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-18
+
 ### Fixed
 - Fix catalog 500 error when combining search queries (`q=...`) with general filters (`deprecated`, `stability`, `scope`) or type-specific filters — `CypherQuery.match()` was not resetting WHERE-clause state, producing invalid Cypher after full-text search calls
 - Fix catalog 500 error when `deprecated=true` included capabilities in mixed-type results — stray `null AS address` column caused UNION column mismatch
@@ -233,7 +235,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#49]: https://github.com/model-graph-tools/rest-api/issues/49
 [#50]: https://github.com/model-graph-tools/rest-api/issues/50
 [#51]: https://github.com/model-graph-tools/rest-api/issues/51
-[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/model-graph-tools/rest-api/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/model-graph-tools/rest-api/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/model-graph-tools/rest-api/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/model-graph-tools/rest-api/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/model-graph-tools/rest-api/compare/v0.5.2...v0.5.3
