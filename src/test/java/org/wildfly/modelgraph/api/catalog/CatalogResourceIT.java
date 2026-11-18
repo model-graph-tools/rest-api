@@ -297,7 +297,7 @@ class CatalogResourceIT {
     }
 
     @Test
-    void searchWithQDefaultsSortToRelevance() {
+    void searchWithQReturnsResults() {
         given()
                 .queryParam("q", "pool")
                 .when().get("/api/catalog")

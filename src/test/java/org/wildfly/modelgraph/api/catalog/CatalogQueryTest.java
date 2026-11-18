@@ -118,19 +118,19 @@ class CatalogQueryTest {
     }
 
     @Test
-    void sortRejectsInvalidFieldAndDefaultsToName() {
+    void sortRejectsInvalidFieldAndDefaultsToType() {
         CatalogQuery q = queryWith(null, null, "bogus", null, null, null, null, null);
-        assertEquals("name", q.sort());
+        assertEquals("type", q.sort());
     }
 
     @Test
-    void sortDefaultsToScoreWhenSearchQueryPresent() {
+    void sortDefaultsToTypeWhenSearchQueryPresent() {
         CatalogQuery q = queryWith("pool", null, null, null, null, null, null, null);
-        assertEquals("score", q.sort());
+        assertEquals("type", q.sort());
     }
 
     @Test
-    void sortExplicitOverridesScoreDefault() {
+    void sortExplicitOverridesTypeDefault() {
         CatalogQuery q = queryWith("pool", null, "name", null, null, null, null, null);
         assertEquals("name", q.sort());
     }
@@ -142,15 +142,21 @@ class CatalogQueryTest {
     }
 
     @Test
-    void sortDefaultsToNameWhenTypeIsNotResourceOnly() {
-        CatalogQuery q = queryWith(null, "resource,attribute", null, null, null, null, null, null);
+    void sortDefaultsToNameWhenTypeIsSingleNonResource() {
+        CatalogQuery q = queryWith(null, "attribute", null, null, null, null, null, null);
         assertEquals("name", q.sort());
     }
 
     @Test
-    void sortDefaultsToNameWhenNoFilters() {
+    void sortDefaultsToTypeWhenTypesAreMixed() {
+        CatalogQuery q = queryWith(null, "resource,attribute", null, null, null, null, null, null);
+        assertEquals("type", q.sort());
+    }
+
+    @Test
+    void sortDefaultsToTypeWhenNoFilters() {
         CatalogQuery q = query();
-        assertEquals("name", q.sort());
+        assertEquals("type", q.sort());
     }
 
     // ------------------------------------------------------ order validation
@@ -598,7 +604,7 @@ class CatalogQueryTest {
     })
     void sortRejectsInjectionAttempts(String maliciousSort) {
         CatalogQuery q = queryWith(null, null, maliciousSort, null, null, null, null, null);
-        assertEquals("name", q.sort());
+        assertEquals("type", q.sort());
     }
 
     @ParameterizedTest(name = "order injection attempt: \"{0}\"")

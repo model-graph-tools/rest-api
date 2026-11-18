@@ -174,13 +174,13 @@ class CatalogRepositoryTest {
     void searchQueryIncludesFulltextCall() {
         String query = repository.buildResultQuery(queryWith("pool", null, null, null));
         assertTrue(query.contains("db.index.fulltext.queryNodes"), "should use fulltext index");
-        assertTrue(query.contains("score"), "should include score column");
+        assertFalse(query.contains("score"), "should not include score column");
     }
 
     @Test
-    void searchQueryDefaultsSortToScore() {
+    void searchQueryDefaultsSortToType() {
         String query = repository.buildResultQuery(queryWith("pool", null, null, null));
-        assertTrue(query.contains("ORDER BY score DESC"), "search defaults to score sort");
+        assertTrue(query.contains("ORDER BY type ASC, name ASC"), "search defaults to type sort");
     }
 
     @Test
@@ -333,9 +333,9 @@ class CatalogRepositoryTest {
     // ------------------------------------------------------ order by
 
     @Test
-    void defaultSortIsNameAsc() {
+    void defaultSortIsTypeAsc() {
         String query = repository.buildResultQuery(queryWith(null, null, null, null));
-        assertTrue(query.contains("ORDER BY name ASC"), "default sort is name ASC");
+        assertTrue(query.contains("ORDER BY type ASC, name ASC"), "default sort is type ASC, name ASC");
     }
 
     @Test
@@ -390,13 +390,13 @@ class CatalogRepositoryTest {
     }
 
     @Test
-    void orderByWithSearchQueryUsesScoreSort() {
+    void orderByWithSearchQueryUsesTypeSort() {
         CatalogQuery filter = CatalogQuery.of("pool", null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null);
         String query = repository.buildResultQuery(filter);
-        assertTrue(query.contains("ORDER BY score DESC, name ASC"));
+        assertTrue(query.contains("ORDER BY type ASC, name ASC"));
     }
 
     @Test

@@ -23,6 +23,9 @@ public class CatalogResource {
     @Inject
     CatalogRepository repository;
 
+    @Inject
+    CatalogFacetRepository facetRepository;
+
     @GET
     @Operation(
             summary = "Faceted search across the management model",
@@ -218,9 +221,9 @@ public class CatalogResource {
 
             @Parameter(
                     name = "sort",
-                    description = "Sort field. When sorting by resourceAddress, null values sort last regardless of direction.",
+                    description = "Sort field. Defaults to 'type' (then name) for mixed/unfiltered results, 'resourceAddress' for resource-only, and 'name' for other single types. When sorting by resourceAddress, null values sort last.",
                     example = "name",
-                    schema = @Schema(type = SchemaType.STRING, defaultValue = "name", enumeration = {"name", "type", "resourceAddress", "stability"}))
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = "type", enumeration = {"name", "type", "resourceAddress", "stability"}))
             @QueryParam("sort") String sort,
 
             @Parameter(
@@ -253,7 +256,7 @@ public class CatalogResource {
                 sort, order, limit, offset);
         var results = repository.search(filter);
         int total = repository.total(filter);
-        var facets = repository.facetCounts(filter);
+        var facets = facetRepository.facetCounts(filter);
         return Response.ok(new CatalogResponse(results, facets, total, filter.limit(), filter.offset())).build();
     }
 }

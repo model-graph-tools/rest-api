@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Simplify catalog sort defaults: remove score-based sorting, default to `type` (then name) for mixed/unfiltered results, `resourceAddress` for resource-only, `name` for other single types
+- Remove `score` column from Cypher queries — full-text search score was computed but never used in results or sorting
+- Merge `CypherQuery.fullTextSearch` and `fullTextSearchNoScore` into a single `fullTextSearch` method (no score yield)
+- Consolidate duplicated filter logic — `appendAttributeFilters`, `appendOperationFilters`, and `addAttributeFilterParams` now delegate to their `Excluding` variants
+- Extract shared capability branch query logic into `appendCapabilityMatchWhere` helper, eliminating 4x code duplication
+- Extract facet counting into `CatalogFacetRepository`, reducing `CatalogRepository` from 1447 to 715 lines
+
+### Removed
+- Remove unused `CypherQuery.orderBy()` method
+
 ## [0.6.2] - 2026-11-18
 
 ### Fixed

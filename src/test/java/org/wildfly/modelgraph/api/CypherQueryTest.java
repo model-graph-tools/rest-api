@@ -24,22 +24,12 @@ class CypherQueryTest {
     // ------------------------------------------------------ full-text search
 
     @Test
-    void fullTextSearchWithScore() {
+    void fullTextSearch() {
         String result = CypherQuery.create()
                 .fullTextSearch("mgt_search", "Resource")
                 .toString();
         assertEquals(
-                "CALL db.index.fulltext.queryNodes('mgt_search', $term) YIELD node, score\nWHERE node:Resource",
-                result);
-    }
-
-    @Test
-    void fullTextSearchWithoutScore() {
-        String result = CypherQuery.create()
-                .fullTextSearchNoScore("mgt_search", "Attribute")
-                .toString();
-        assertEquals(
-                "CALL db.index.fulltext.queryNodes('mgt_search', $term) YIELD node\nWHERE node:Attribute",
+                "CALL db.index.fulltext.queryNodes('mgt_search', $term) YIELD node\nWHERE node:Resource",
                 result);
     }
 
@@ -67,7 +57,7 @@ class CypherQueryTest {
     @Test
     void fullTextSearchThenWhereUsesAnd() {
         String result = CypherQuery.create()
-                .fullTextSearchNoScore("mgt_search", "Resource")
+                .fullTextSearch("mgt_search", "Resource")
                 .where("toLower(node.stability) IN $stabilities")
                 .toString();
         assertEquals(
@@ -131,18 +121,6 @@ class CypherQueryTest {
         assertEquals("MATCH (r:Resource)\nRETURN r.name AS name", result);
     }
 
-    // ------------------------------------------------------ order by
-
-    @Test
-    void orderByAppendsClause() {
-        String result = CypherQuery.create()
-                .match("(r:Resource)")
-                .returning("r.name AS name")
-                .orderBy("name ASC")
-                .toString();
-        assertEquals("MATCH (r:Resource)\nRETURN r.name AS name\nORDER BY name ASC", result);
-    }
-
     // ------------------------------------------------------ append and newLine
 
     @Test
@@ -169,7 +147,7 @@ class CypherQueryTest {
     @Test
     void complexQueryCombinesAllClauses() {
         String result = CypherQuery.create()
-                .fullTextSearchNoScore("mgt_search", "Attribute")
+                .fullTextSearch("mgt_search", "Attribute")
                 .newLine()
                 .match("(node)<-[:HAS_ATTRIBUTE]-(r:Resource)")
                 .whereIf(true, "toLower(node.stability) IN $stabilities")

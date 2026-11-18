@@ -16,13 +16,6 @@ public final class CypherQuery {
     }
 
     public CypherQuery fullTextSearch(String index, String label) {
-        sb.append("CALL db.index.fulltext.queryNodes('").append(index).append("', $term) YIELD node, score\n");
-        sb.append("WHERE node:").append(label);
-        hasWhere = true;
-        return this;
-    }
-
-    public CypherQuery fullTextSearchNoScore(String index, String label) {
         sb.append("CALL db.index.fulltext.queryNodes('").append(index).append("', $term) YIELD node\n");
         sb.append("WHERE node:").append(label);
         hasWhere = true;
@@ -57,11 +50,6 @@ public final class CypherQuery {
 
     public CypherQuery returning(String clause) {
         sb.append("\nRETURN ").append(clause);
-        return this;
-    }
-
-    public CypherQuery orderBy(String clause) {
-        sb.append("\nORDER BY ").append(clause);
         return this;
     }
 

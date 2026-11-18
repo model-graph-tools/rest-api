@@ -75,7 +75,7 @@ public record CatalogQuery(
         String effectiveRefsCap = (refsCap != null && !refsCap.isBlank())
                 ? refsCap.strip().toLowerCase()
                 : null;
-        String effectiveSort = parseSort(sort, effectiveQ, types);
+        String effectiveSort = parseSort(sort, types);
         String effectiveOrder = parseOrder(order);
         int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, MAX_LIMIT) : DEFAULT_LIMIT;
         int effectiveOffset = (offset != null && offset >= 0) ? offset : DEFAULT_OFFSET;
@@ -266,18 +266,18 @@ public record CatalogQuery(
             "resourceaddress", "resourceAddress",
             "stability", "stability");
 
-    private static String parseSort(String sort, String q, List<String> types) {
+    private static String parseSort(String sort, List<String> types) {
         if (sort != null && !sort.isBlank()) {
             String canonical = VALID_SORT_FIELDS.get(sort.strip().toLowerCase());
             if (canonical != null) {
                 return canonical;
             }
         }
-        if (q != null) {
-            return "score";
-        }
         if (types.size() == 1 && types.contains("resource")) {
             return "resourceAddress";
+        }
+        if (types.size() > 1 || types.isEmpty()) {
+            return "type";
         }
         return DEFAULT_SORT;
     }
