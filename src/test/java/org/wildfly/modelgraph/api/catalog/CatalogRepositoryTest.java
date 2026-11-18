@@ -217,6 +217,7 @@ class CatalogRepositoryTest {
     void deprecatedTrueCapabilityBranchReturnsFalse() {
         String query = repository.buildResultQuery(queryWith(null, null, null, true));
         assertTrue(query.contains("(c:Capability) WHERE false"), "capabilities excluded when deprecated=true");
+        assertFalse(query.contains("null AS address"), "capability branch must not return extra 'address' column");
     }
 
     @Test
@@ -410,6 +411,17 @@ class CatalogRepositoryTest {
         assertFalse(query.contains("malicious"), "user search term must not be in query string");
         assertTrue(query.contains("$term"), "search term must be passed as parameter");
         assertTrue(query.contains("$capabilityTerms"), "capability terms must be passed as parameter");
+    }
+
+    @Test
+    void searchWithStabilityUsesWhereAfterMatch() {
+        String query = repository.buildResultQuery(queryWith("protocol", null, "preview", null));
+        assertFalse(query.contains("(r:Resource) AND toLower"),
+                "stability filter after MATCH must use WHERE, not AND");
+        assertTrue(query.contains("(r:Resource) WHERE toLower")
+                        || query.contains("(r:Resource)\n WHERE toLower")
+                        || !query.contains("(r:Resource)"),
+                "relationship branches must use WHERE after MATCH");
     }
 
     // ------------------------------------------------------ helpers

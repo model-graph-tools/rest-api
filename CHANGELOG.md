@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix catalog 500 error when combining search queries (`q=...`) with general filters (`deprecated`, `stability`, `scope`) or type-specific filters — `CypherQuery.match()` was not resetting WHERE-clause state, producing invalid Cypher after full-text search calls
+- Fix catalog 500 error when `deprecated=true` included capabilities in mixed-type results — stray `null AS address` column caused UNION column mismatch
+
 ## [0.6.1] - 2026-11-17
 
 ### Changed

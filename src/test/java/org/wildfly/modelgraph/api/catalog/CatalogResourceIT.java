@@ -306,6 +306,155 @@ class CatalogResourceIT {
                 .body("results", not(empty()));
     }
 
+    // ------------------------------------------------------ search combined with general filters
+
+    @Test
+    void searchWithDeprecatedTrueReturnsOnlyDeprecated() {
+        var response = given()
+                .queryParam("q", "protocol")
+                .queryParam("deprecated", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        List<Boolean> deprecatedFlags = response.getList("results.deprecated");
+        for (Boolean flag : deprecatedFlags) {
+            assertThat("All results should be deprecated", flag, is(true));
+        }
+    }
+
+    @Test
+    void searchWithDeprecatedFalseExcludesDeprecated() {
+        var response = given()
+                .queryParam("q", "pool")
+                .queryParam("deprecated", false)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<Boolean> deprecatedFlags = response.getList("results.deprecated");
+        assertThat("No results should be deprecated", deprecatedFlags, everyItem(is(false)));
+    }
+
+    @Test
+    void searchWithStabilityFilterReturnsMatchingStability() {
+        var response = given()
+                .queryParam("q", "pool")
+                .queryParam("stability", "default")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> stabilities = response.getList("results.stability");
+        assertThat("All results should have default stability",
+                stabilities, everyItem(is("default")));
+    }
+
+    @Test
+    void searchWithScopeFilterNarrowsResults() {
+        var response = given()
+                .queryParam("q", "pool")
+                .queryParam("scope", "/subsystem=io")
+                .queryParam("limit", 100)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> addresses = response.getList("results.resourceAddress");
+        for (String address : addresses) {
+            if (address != null) {
+                assertThat("Resource address should start with /subsystem=io",
+                        address, startsWith("/subsystem=io"));
+            }
+        }
+    }
+
+    // ------------------------------------------------------ search combined with type-specific filters
+
+    @Test
+    void searchWithTypeResourceAndSingletonFilter() {
+        given()
+                .queryParam("q", "subsystem")
+                .queryParam("type", "resource")
+                .queryParam("singleton", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    void searchWithTypeAttributeAndStorageFilter() {
+        var response = given()
+                .queryParam("q", "name")
+                .queryParam("type", "attribute")
+                .queryParam("storage", "configuration")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> types = response.getList("results.type");
+        assertThat("All results should be attributes", types, everyItem(is("attribute")));
+
+        List<String> storageValues = response.getList("results.properties.storage");
+        assertThat("All results should have configuration storage",
+                storageValues, everyItem(is("configuration")));
+    }
+
+    @Test
+    void searchWithTypeOperationAndReadOnlyFilter() {
+        given()
+                .queryParam("q", "read")
+                .queryParam("type", "operation")
+                .queryParam("readOnly", true)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    void searchWithMultipleFilters() {
+        var response = given()
+                .queryParam("q", "pool")
+                .queryParam("stability", "default")
+                .queryParam("deprecated", false)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<String> stabilities = response.getList("results.stability");
+        assertThat("All results should have default stability",
+                stabilities, everyItem(is("default")));
+
+        List<Boolean> deprecatedFlags = response.getList("results.deprecated");
+        assertThat("No results should be deprecated", deprecatedFlags, everyItem(is(false)));
+    }
+
+    @Test
+    void searchWithFacetsIncludesAllFacetCounts() {
+        var response = given()
+                .queryParam("q", "pool")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+
+        Map<String, Object> facets = response.getMap("facets");
+        assertThat("Search results should include type facet", facets, hasKey("type"));
+        assertThat("Search results should include stability facet", facets, hasKey("stability"));
+        assertThat("Search results should include deprecated facet", facets, hasKey("deprecated"));
+    }
+
     // ------------------------------------------------------ deprecated filter
 
     @Test

@@ -31,6 +31,7 @@ public final class CypherQuery {
 
     public CypherQuery match(String pattern) {
         sb.append("MATCH ").append(pattern);
+        hasWhere = false;
         return this;
     }
 

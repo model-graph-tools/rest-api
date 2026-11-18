@@ -470,7 +470,7 @@ public class CatalogRepository {
         if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
             q.match("(c:Capability)").where("false");
             q.returning("'capability' AS type, c.name AS name, null AS description, "
-                    + "null AS address, null AS resourceAddress, toLower(c.stability) AS stability, "
+                    + "null AS resourceAddress, toLower(c.stability) AS stability, "
                     + "false AS deprecated, null AS properties");
             if (includesResource) {
                 q.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");

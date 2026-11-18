@@ -180,7 +180,7 @@ class CypherQueryTest {
                 "CALL db.index.fulltext.queryNodes('mgt_search', $term) YIELD node\n"
                         + "WHERE node:Attribute\n"
                         + "MATCH (node)<-[:HAS_ATTRIBUTE]-(r:Resource)"
-                        + " AND toLower(node.stability) IN $stabilities"
+                        + " WHERE toLower(node.stability) IN $stabilities"
                         + " AND r.address STARTS WITH $scope\n"
                         + "RETURN 'attribute' AS type, node.name AS name",
                 result);
