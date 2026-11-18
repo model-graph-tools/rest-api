@@ -82,6 +82,7 @@ class CatalogResourceIT {
     void typeFilterMultipleTypesReturnsMatchingTypes() {
         var response = given()
                 .queryParam("type", "resource,attribute")
+                .queryParam("sort", "name")
                 .when().get("/api/catalog")
                 .then()
                 .statusCode(200)
