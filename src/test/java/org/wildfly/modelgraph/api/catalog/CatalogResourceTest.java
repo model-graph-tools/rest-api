@@ -242,12 +242,12 @@ class CatalogResourceTest {
         ArgumentCaptor<CatalogQuery> captor = ArgumentCaptor.forClass(CatalogQuery.class);
         Mockito.verify(repository).search(captor.capture());
         CatalogQuery filter = captor.getValue();
-        assertEquals("type", filter.sort());
+        assertEquals("name", filter.sort());
         assertEquals("asc", filter.order());
     }
 
     @Test
-    void sortOrderWithSearchQueryDefaultsToType() {
+    void sortOrderWithSearchQueryDefaultsToName() {
         Mockito.when(repository.search(any(CatalogQuery.class))).thenReturn(List.of());
         Mockito.when(repository.total(any(CatalogQuery.class))).thenReturn(0);
         Mockito.when(facetRepository.facetCounts(any(CatalogQuery.class))).thenReturn(CatalogFacets.commonOnly(Map.of(), Map.of(), Map.of()));
@@ -261,7 +261,7 @@ class CatalogResourceTest {
         ArgumentCaptor<CatalogQuery> captor = ArgumentCaptor.forClass(CatalogQuery.class);
         Mockito.verify(repository).search(captor.capture());
         CatalogQuery filter = captor.getValue();
-        assertEquals("type", filter.sort());
+        assertEquals("name", filter.sort());
     }
 
     @Test

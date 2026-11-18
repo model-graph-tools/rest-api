@@ -276,9 +276,6 @@ public record CatalogQuery(
         if (types.size() == 1 && types.contains("resource")) {
             return "resourceAddress";
         }
-        if (types.size() > 1 || types.isEmpty()) {
-            return "type";
-        }
         return DEFAULT_SORT;
     }
 

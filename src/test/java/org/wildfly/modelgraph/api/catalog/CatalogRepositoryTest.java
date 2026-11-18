@@ -178,9 +178,9 @@ class CatalogRepositoryTest {
     }
 
     @Test
-    void searchQueryDefaultsSortToType() {
+    void searchQueryDefaultsSortToName() {
         String query = repository.buildResultQuery(queryWith("pool", null, null, null));
-        assertTrue(query.contains("ORDER BY type ASC, name ASC"), "search defaults to type sort");
+        assertTrue(query.contains("ORDER BY name ASC"), "search defaults to name sort");
     }
 
     @Test
@@ -333,9 +333,9 @@ class CatalogRepositoryTest {
     // ------------------------------------------------------ order by
 
     @Test
-    void defaultSortIsTypeAsc() {
+    void defaultSortIsNameAsc() {
         String query = repository.buildResultQuery(queryWith(null, null, null, null));
-        assertTrue(query.contains("ORDER BY type ASC, name ASC"), "default sort is type ASC, name ASC");
+        assertTrue(query.contains("ORDER BY name ASC"), "default sort is name ASC");
     }
 
     @Test
@@ -390,13 +390,13 @@ class CatalogRepositoryTest {
     }
 
     @Test
-    void orderByWithSearchQueryUsesTypeSort() {
+    void orderByWithSearchQueryUsesNameSort() {
         CatalogQuery filter = CatalogQuery.of("pool", null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null);
         String query = repository.buildResultQuery(filter);
-        assertTrue(query.contains("ORDER BY type ASC, name ASC"));
+        assertTrue(query.contains("ORDER BY name ASC"));
     }
 
     @Test

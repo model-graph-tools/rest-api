@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Change default catalog sort from `type` to `name` for mixed-type and unfiltered results — results are now always sorted by name unless explicitly overridden or filtered to resources only (which defaults to `resourceAddress`)
+
 ## [0.6.3] - 2026-11-18
 
 ### Changed

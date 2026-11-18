@@ -118,15 +118,15 @@ class CatalogQueryTest {
     }
 
     @Test
-    void sortRejectsInvalidFieldAndDefaultsToType() {
+    void sortRejectsInvalidFieldAndDefaultsToName() {
         CatalogQuery q = queryWith(null, null, "bogus", null, null, null, null, null);
-        assertEquals("type", q.sort());
+        assertEquals("name", q.sort());
     }
 
     @Test
-    void sortDefaultsToTypeWhenSearchQueryPresent() {
+    void sortDefaultsToNameWhenSearchQueryPresent() {
         CatalogQuery q = queryWith("pool", null, null, null, null, null, null, null);
-        assertEquals("type", q.sort());
+        assertEquals("name", q.sort());
     }
 
     @Test
@@ -148,15 +148,15 @@ class CatalogQueryTest {
     }
 
     @Test
-    void sortDefaultsToTypeWhenTypesAreMixed() {
+    void sortDefaultsToNameWhenTypesAreMixed() {
         CatalogQuery q = queryWith(null, "resource,attribute", null, null, null, null, null, null);
-        assertEquals("type", q.sort());
+        assertEquals("name", q.sort());
     }
 
     @Test
-    void sortDefaultsToTypeWhenNoFilters() {
+    void sortDefaultsToNameWhenNoFilters() {
         CatalogQuery q = query();
-        assertEquals("type", q.sort());
+        assertEquals("name", q.sort());
     }
 
     // ------------------------------------------------------ order validation
@@ -604,7 +604,7 @@ class CatalogQueryTest {
     })
     void sortRejectsInjectionAttempts(String maliciousSort) {
         CatalogQuery q = queryWith(null, null, maliciousSort, null, null, null, null, null);
-        assertEquals("type", q.sort());
+        assertEquals("name", q.sort());
     }
 
     @ParameterizedTest(name = "order injection attempt: \"{0}\"")
