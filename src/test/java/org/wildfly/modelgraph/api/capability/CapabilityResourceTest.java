@@ -61,9 +61,8 @@ class CapabilityResourceTest {
         Mockito.when(repository.capabilityDetail("org.wildfly.data-source"))
                 .thenReturn(Optional.of(new CapabilityDetailResponse(
                         "org.wildfly.data-source",
-                        "stable",
                         List.of(new CapabilityDetailResponse.DeclaredBy("data-source",
-                                "/subsystem=datasources/data-source=*")),
+                                "/subsystem=datasources/data-source=*", "stable")),
                         List.of(new CapabilityReference("datasource", "stable", "mail-session",
                                 "/subsystem=mail/mail-session=*", "stable")))));
 
@@ -72,10 +71,10 @@ class CapabilityResourceTest {
                 .then()
                 .statusCode(200)
                 .body("name", is("org.wildfly.data-source"))
-                .body("stability", is("stable"))
                 .body("declaredBy", hasSize(1))
                 .body("declaredBy[0].resourceName", is("data-source"))
                 .body("declaredBy[0].resourceAddress", is("/subsystem=datasources/data-source=*"))
+                .body("declaredBy[0].stability", is("stable"))
                 .body("referencedBy", hasSize(1))
                 .body("referencedBy[0].attributeName", is("datasource"))
                 .body("referencedBy[0].resourceAddress", is("/subsystem=mail/mail-session=*"));
@@ -98,7 +97,7 @@ class CapabilityResourceTest {
     void detailWithEmptyRelationshipsReturnsEmptyLists() {
         Mockito.when(repository.capabilityDetail("org.wildfly.lonely"))
                 .thenReturn(Optional.of(new CapabilityDetailResponse(
-                        "org.wildfly.lonely", "stable", List.of(), List.of())));
+                        "org.wildfly.lonely", List.of(), List.of())));
 
         given()
                 .when().get("/api/capability/org.wildfly.lonely")

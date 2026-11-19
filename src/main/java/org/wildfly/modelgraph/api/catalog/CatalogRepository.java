@@ -249,7 +249,7 @@ public class CatalogRepository {
         if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
             q.match("(c:Capability)").where("false");
             q.returning("'capability' AS type, c.name AS name, null AS description, "
-                    + "null AS resourceAddress, toLower(c.stability) AS stability, "
+                    + "null AS resourceAddress, null AS stability, "
                     + "false AS deprecated, null AS properties");
             if (includesResource) {
                 q.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
@@ -263,7 +263,7 @@ public class CatalogRepository {
 
         appendCapabilityMatchWhere(q, filter, true);
         q.returning("'capability' AS type, c.name AS name, null AS description, "
-                + "null AS resourceAddress, toLower(c.stability) AS stability, "
+                + "null AS resourceAddress, null AS stability, "
                 + "false AS deprecated, null AS properties");
         if (includesResource) {
             q.append(", null AS singleton, null AS capabilities, null AS definesAttrGroups");
@@ -271,7 +271,7 @@ public class CatalogRepository {
         if (includesOperation) {
             q.append(NULL_OP_PROPS);
         }
-        q.append(", [(c)<-[:DECLARES_CAPABILITY]-(dr:Resource) | dr.address] AS declaringResources");
+        q.append(", [(c)<-[d:DECLARES_CAPABILITY]-(dr:Resource) | {address: dr.address, stability: d.stability}] AS declaringResources");
         return q.toString();
     }
 
@@ -313,24 +313,34 @@ public class CatalogRepository {
 
     static void appendCapabilityMatchWhere(CypherQuery q, CatalogQuery filter, boolean includeStability) {
         if (filter.hasSearchQuery()) {
-            q.match("(c:Capability)\n");
-            q.where("ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
-            if (includeStability) {
-                appendStabilityWhere(q, "c", filter);
-            }
-            if (filter.hasScopeFilter()) {
-                q.with("c");
-                q.newLine().match("(c)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
+            if (includeStability && filter.hasStabilityFilter()) {
+                q.match("(c:Capability)<-[d:DECLARES_CAPABILITY]-(r:Resource)\n");
+                q.where("ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
+                q.where("toLower(d.stability) IN $stabilities");
+                if (filter.hasScopeFilter()) {
+                    q.where("r.address STARTS WITH $scope");
+                }
+            } else {
+                q.match("(c:Capability)\n");
+                q.where("ALL(part IN $capabilityTerms WHERE toLower(replace(c.name, '-', '')) CONTAINS part)");
+                if (filter.hasScopeFilter()) {
+                    q.with("c");
+                    q.newLine().match("(c)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
+                }
             }
         } else if (filter.hasScopeFilter()) {
-            q.match("(c:Capability)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
-            if (includeStability) {
-                appendStabilityWhere(q, "c", filter);
+            if (includeStability && filter.hasStabilityFilter()) {
+                q.match("(c:Capability)<-[d:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
+                q.where("toLower(d.stability) IN $stabilities");
+            } else {
+                q.match("(c:Capability)<-[:DECLARES_CAPABILITY]-(r:Resource)").where("r.address STARTS WITH $scope");
             }
         } else {
-            q.match("(c:Capability)");
-            if (includeStability) {
-                q.whereIf(filter.hasStabilityFilter(), "toLower(c.stability) IN $stabilities");
+            if (includeStability && filter.hasStabilityFilter()) {
+                q.match("(c:Capability)<-[d:DECLARES_CAPABILITY]-()");
+                q.where("toLower(d.stability) IN $stabilities");
+            } else {
+                q.match("(c:Capability)");
             }
         }
     }
@@ -673,9 +683,11 @@ public class CatalogRepository {
                     record.get("hasReturnValue").asBoolean(false));
         } else if ("capability".equals(type) && filter.includesType(CatalogType.CAPABILITY)) {
             var drValue = record.get("declaringResources");
-            List<String> declaringResources = drValue.isNull()
+            List<DeclaringResource> declaringResources = drValue.isNull()
                     ? List.of()
-                    : drValue.asList(org.neo4j.driver.Value::asString);
+                    : drValue.asList(v -> new DeclaringResource(
+                            v.get("address").asString(null),
+                            v.get("stability").asString(null)));
             properties = new CapabilityProperties(declaringResources);
         }
         return new CatalogResult(

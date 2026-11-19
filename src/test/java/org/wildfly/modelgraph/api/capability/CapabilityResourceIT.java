@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.wildfly.modelgraph.api.IntegrationTestProfile;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -51,14 +52,25 @@ class CapabilityResourceIT {
                 .then()
                 .statusCode(200)
                 .body("name", is("org.wildfly.data-source"))
-                .body("stability", notNullValue())
+                .body("$", not(hasKey("stability")))
                 .body("declaredBy", not(empty()))
                 .body("declaredBy[0].resourceName", notNullValue())
                 .body("declaredBy[0].resourceAddress", notNullValue())
+                .body("declaredBy[0].stability", notNullValue())
                 .body("referencedBy", not(empty()))
                 .body("referencedBy[0].attributeName", notNullValue())
                 .body("referencedBy[0].resourceName", notNullValue())
                 .body("referencedBy[0].resourceAddress", notNullValue());
+    }
+
+    @Test
+    void capabilityDetailAllDeclaredByHaveStability() {
+        List<String> stabilities = given()
+                .when().get("/api/capability/org.wildfly.data-source")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath().getList("declaredBy.stability", String.class);
+        assertThat("All declaredBy entries should have stability", stabilities, everyItem(notNullValue()));
     }
 
     @Test

@@ -11,9 +11,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public record CapabilityDetailResponse(
         @Schema(description = "Capability name", examples = {"org.wildfly.data-source"})
         String name,
-        @Schema(description = "Stability level", examples = {"stable"}, enumeration = {"default", "community", "preview", "experimental"})
-        String stability,
-        @Schema(description = "Resources that declare this capability")
+        @Schema(description = "Resources that declare this capability, with per-declaration stability")
         List<DeclaredBy> declaredBy,
         @Schema(description = "Attributes that reference this capability")
         List<CapabilityReference> referencedBy) {
@@ -24,6 +22,8 @@ public record CapabilityDetailResponse(
             @Schema(description = "Resource name", examples = {"data-source"})
             String resourceName,
             @Schema(description = "Full resource address", examples = {"/subsystem=datasources/data-source=*"})
-            String resourceAddress) {
+            String resourceAddress,
+            @Schema(description = "Stability level reported by this resource's capability declaration, null if not reported")
+            String stability) {
     }
 }

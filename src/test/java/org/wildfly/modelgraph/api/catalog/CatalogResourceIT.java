@@ -351,9 +351,16 @@ class CatalogResourceIT {
                 .body("results", not(empty()))
                 .extract().jsonPath();
 
-        List<String> stabilities = response.getList("results.stability");
-        assertThat("All results should have default stability",
-                stabilities, everyItem(is("default")));
+        List<Map<String, Object>> results = response.getList("results");
+        for (Map<String, Object> result : results) {
+            if ("capability".equals(result.get("type"))) {
+                assertThat("Capability top-level stability should be null",
+                        result.get("stability"), nullValue());
+            } else {
+                assertThat("Non-capability result should have default stability",
+                        result.get("stability"), is("default"));
+            }
+        }
     }
 
     @Test
@@ -433,9 +440,16 @@ class CatalogResourceIT {
                 .body("results", not(empty()))
                 .extract().jsonPath();
 
-        List<String> stabilities = response.getList("results.stability");
-        assertThat("All results should have default stability",
-                stabilities, everyItem(is("default")));
+        List<Map<String, Object>> results = response.getList("results");
+        for (Map<String, Object> result : results) {
+            if ("capability".equals(result.get("type"))) {
+                assertThat("Capability top-level stability should be null",
+                        result.get("stability"), nullValue());
+            } else {
+                assertThat("Non-capability result should have default stability",
+                        result.get("stability"), is("default"));
+            }
+        }
 
         List<Boolean> deprecatedFlags = response.getList("results.deprecated");
         assertThat("No results should be deprecated", deprecatedFlags, everyItem(is(false)));
@@ -1180,8 +1194,53 @@ class CatalogResourceIT {
             assertThat("Capability should have properties", properties, notNullValue());
             assertThat("Properties should have declaringResources", properties, hasKey("declaringResources"));
             @SuppressWarnings("unchecked")
-            List<String> declaringResources = (List<String>) properties.get("declaringResources");
+            List<Map<String, Object>> declaringResources = (List<Map<String, Object>>) properties.get("declaringResources");
             assertThat("declaringResources should not be empty", declaringResources, not(empty()));
+            for (Map<String, Object> dr : declaringResources) {
+                assertThat("declaringResource should have address", dr, hasKey("address"));
+                assertThat("declaringResource should have stability", dr, hasKey("stability"));
+                assertThat("declaringResource stability should not be null", dr.get("stability"), notNullValue());
+            }
+        }
+    }
+
+    @Test
+    void capabilityResultsHaveNullTopLevelStability() {
+        var response = given()
+                .queryParam("type", "capability")
+                .queryParam("limit", 10)
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<Map<String, Object>> results = response.getList("results");
+        for (Map<String, Object> result : results) {
+            assertThat("Capability top-level stability should be null (stability is per-declaration)",
+                    result.get("stability"), nullValue());
+        }
+    }
+
+    @Test
+    void capabilitiesAppearInStabilityFilteredResults() {
+        var response = given()
+                .queryParam("type", "capability")
+                .queryParam("stability", "default")
+                .when().get("/api/catalog")
+                .then()
+                .statusCode(200)
+                .body("results", not(empty()))
+                .extract().jsonPath();
+
+        List<Map<String, Object>> results = response.getList("results");
+        for (Map<String, Object> result : results) {
+            assertThat("All results should be capabilities", result.get("type"), is("capability"));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> properties = (Map<String, Object>) result.get("properties");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> declaringResources = (List<Map<String, Object>>) properties.get("declaringResources");
+            assertThat("Filtered capabilities should have declaring resources", declaringResources, not(empty()));
         }
     }
 

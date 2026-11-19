@@ -13,7 +13,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Properties specific to capability results")
 public record CapabilityProperties(
-        @Schema(description = "Addresses of resources that declare this capability")
-        List<String> declaringResources)
+        @Schema(description = "Resources that declare this capability, with per-declaration stability")
+        List<DeclaringResource> declaringResources)
         implements Properties {
 }

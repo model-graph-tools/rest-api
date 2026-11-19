@@ -561,11 +561,12 @@ public class CatalogFacetRepository {
         if (filter.includesType(CatalogType.OPERATION)) {
             branches.add(operationStabilityFacetBranch(filter));
         }
-        if (filter.includesType(CatalogType.CAPABILITY)) {
-            branches.add(capabilityStabilityFacetBranch(filter));
+        if (branches.isEmpty()) {
+            query.append("RETURN null AS stability\n");
+        } else {
+            query.append(String.join("\nUNION ALL\n", branches));
+            query.append("\n");
         }
-        query.append(String.join("\nUNION ALL\n", branches));
-        query.append("\n");
     }
 
     private String resourceStabilityFacetBranch(CatalogQuery filter) {
@@ -595,15 +596,6 @@ public class CatalogFacetRepository {
         appendScopeWhere(q, "r", filter);
         appendOperationFilters(q, var, filter);
         return q.returning("toLower(" + var + ".stability) AS stability").toString();
-    }
-
-    private String capabilityStabilityFacetBranch(CatalogQuery filter) {
-        CypherQuery q = CypherQuery.create();
-        if (filter.hasDeprecatedFilter() && Boolean.TRUE.equals(filter.deprecated())) {
-            return q.match("(c:Capability)").where("false").returning("toLower(c.stability) AS stability").toString();
-        }
-        appendCapabilityMatchWhere(q, filter, false);
-        return q.returning("toLower(c.stability) AS stability").toString();
     }
 
     // ------------------------------------------------------ deprecated facet branches

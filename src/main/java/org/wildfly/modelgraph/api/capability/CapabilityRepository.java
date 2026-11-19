@@ -23,10 +23,10 @@ public class CapabilityRepository {
 
     private static final String CAPABILITY_DETAIL_QUERY = """
             MATCH (c:Capability {name: $name})
-            OPTIONAL MATCH (c)<-[:DECLARES_CAPABILITY]-(r:Resource)
-            WITH c, r
+            OPTIONAL MATCH (c)<-[d:DECLARES_CAPABILITY]-(r:Resource)
+            WITH c, r, d
             ORDER BY r.name
-            WITH c, COLLECT(CASE WHEN r IS NOT NULL THEN {resourceName: r.name, resourceAddress: r.address} END) AS declaredBy
+            WITH c, COLLECT(CASE WHEN r IS NOT NULL THEN {resourceName: r.name, resourceAddress: r.address, stability: d.stability} END) AS declaredBy
             OPTIONAL MATCH (c)<-[:REFERENCES_CAPABILITY]-(a:Attribute)<-[:HAS_ATTRIBUTE]-(res:Resource)
             WITH c, declaredBy, a, res
             ORDER BY a.name
@@ -35,7 +35,7 @@ public class CapabilityRepository {
                      attributeName: a.name, attributeStability: a.stability,
                      resourceName: res.name, resourceAddress: res.address, resourceStability: res.stability
                  } END) AS referencedBy
-            RETURN c.name AS name, c.stability AS stability, declaredBy, referencedBy
+            RETURN c.name AS name, declaredBy, referencedBy
             """;
 
     @Inject
@@ -56,7 +56,8 @@ public class CapabilityRepository {
                 List<CapabilityDetailResponse.DeclaredBy> declaredBy = record.get("declaredBy")
                         .asList(v -> new CapabilityDetailResponse.DeclaredBy(
                                 v.get("resourceName").asString(null),
-                                v.get("resourceAddress").asString(null)));
+                                v.get("resourceAddress").asString(null),
+                                v.get("stability").asString(null)));
                 List<CapabilityReference> referencedBy = record.get("referencedBy")
                         .asList(v -> new CapabilityReference(
                                 v.get("attributeName").asString(null),
@@ -66,7 +67,6 @@ public class CapabilityRepository {
                                 v.get("resourceStability").asString(null)));
                 return Optional.of(new CapabilityDetailResponse(
                         record.get("name").asString(null),
-                        record.get("stability").asString(null),
                         declaredBy,
                         referencedBy));
             }
