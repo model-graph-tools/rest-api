@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING:** Move capability stability from the `Capability` node to the `DECLARES_CAPABILITY` relationship — stability is now per-declaration, reported in `declaredBy[].stability` (capability detail) and `properties.declaringResources[].stability` (catalog), instead of a top-level capability field
+- Remove capability stability from stability facet computation — capabilities no longer contribute to the stability facet since stability is on the relationship, not the node
+- Change `CapabilityProperties.declaringResources` from `List<String>` (addresses) to `List<DeclaringResource>` (address + stability)
+
 ## [0.6.4] - 2026-11-18
 
 ### Changed

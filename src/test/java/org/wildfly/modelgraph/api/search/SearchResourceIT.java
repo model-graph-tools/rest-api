@@ -217,7 +217,7 @@ class SearchResourceIT {
 
     @Test
     void searchResultsHaveRequiredFields() {
-        given()
+        var response = given()
                 .queryParam("q", "datasource")
                 .when().get("/api/search")
                 .then()
@@ -225,6 +225,17 @@ class SearchResourceIT {
                 .body("results", not(empty()))
                 .body("results.type", everyItem(oneOf("resource", "attribute", "capability", "operation")))
                 .body("results.name", everyItem(notNullValue()))
-                .body("results.stability", everyItem(notNullValue()));
+                .extract().jsonPath();
+
+        List<Map<String, Object>> results = response.getList("results");
+        for (Map<String, Object> result : results) {
+            if ("capability".equals(result.get("type"))) {
+                assertThat("Capability stability should be null (stability is per-declaration)",
+                        result.get("stability"), nullValue());
+            } else {
+                assertThat("Non-capability result should have stability",
+                        result.get("stability"), notNullValue());
+            }
+        }
     }
 }
